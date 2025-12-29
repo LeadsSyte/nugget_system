@@ -13,7 +13,7 @@
         conversionRate: '2.1%',
         monthlyRevenue: '$85K',
 
-        city: 'Sturgis',
+        city: 'JHB',
         searchKeyword: 'leather motorcycle jacket',
         vehicle: 'Honda',
 
@@ -41,9 +41,9 @@
 
         startBannerRotation() {
             const messages = [
-                '💰 Personalized for <strong>'+CLIENT.name+'</strong> <span style="color:#ffd700;margin-left:15px">GET 20% OFF</span> <span id="gimme-code" style="background:#4CAF50;color:#fff;padding:6px 16px;border:2px solid #ffd700;font-size:14px;letter-spacing:2px;cursor:pointer;display:inline-block;margin-left:10px;font-family:Arial,sans-serif;border-radius:4px">GIMME</span>',
-                '📍 Knowing you live in <strong>'+CLIENT.city+'</strong>, we\'d deliver tomorrow!',
-                '🏍️ We\'d also show you the best gear for your <strong>'+CLIENT.vehicle+'</strong>'
+                'SO, <strong>'+CLIENT.name+'</strong> <span style="color:#ffd700;margin-left:15px">GET 20% OFF WITH CODE:</span> <span id="gimme-code" style="background:#4CAF50;color:#fff;padding:6px 16px;border:2px solid #ffd700;font-size:14px;letter-spacing:2px;cursor:pointer;display:inline-block;margin-left:10px;font-family:Arial,sans-serif;border-radius:4px">TheDon</span>',
+                'SO, knowing you live in <strong>'+CLIENT.city+'</strong>, we\'d deliver tomorrow!',
+                'SO, we\'d show you the best gear for your <strong>'+CLIENT.vehicle+'</strong>'
             ];
 
             let currentIndex = 0;
@@ -58,13 +58,13 @@
                     textElement.innerHTML = messages[currentIndex];
                     textElement.style.animation = 'bannerTextFade 5s ease-in-out';
 
-                    // Re-attach click handler for GIMME code if it exists
+                    // Re-attach click handler for code if it exists
                     const codeElement = document.getElementById('gimme-code');
                     if (codeElement) {
                         codeElement.onclick = function() {
-                            navigator.clipboard.writeText('GIMME');
+                            navigator.clipboard.writeText('TheDon');
                             this.textContent = '✓ COPIED!';
-                            setTimeout(() => this.textContent = 'GIMME', 2000);
+                            setTimeout(() => this.textContent = 'TheDon', 2000);
                         };
                     }
 
@@ -84,7 +84,7 @@
                 if (img.width > 600 || img.naturalWidth > 600) {
                     const overlay = document.createElement('div');
                     overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(0,0,0,0.90),rgba(26,26,26,0.93));display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px;z-index:100;animation:overlayFade 0.8s';
-                    overlay.innerHTML = '<style>@keyframes overlayFade{from{opacity:0}to{opacity:1}}@keyframes textFade{0%{opacity:0;transform:translateY(10px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-10px)}}</style><div style="font-size:56px;font-weight:bold;color:#4CAF50;text-align:center;font-family:Impact,Arial Black,sans-serif;letter-spacing:4px;margin-bottom:30px">💰 '+CLIENT.name.toUpperCase()+'</div><div id="dynamic-text" style="font-size:42px;font-weight:bold;color:#fff;text-align:center;font-family:Impact,sans-serif;margin-bottom:25px;line-height:1.4;min-height:120px"></div><div style="font-size:24px;color:#ffd700;text-align:center;font-family:Arial,sans-serif;margin-bottom:35px;max-width:900px;line-height:1.5">Every one of your '+CLIENT.monthlyVisitors+' monthly visitors<br>sees THEIR OWN personalized experience</div><div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center"><span style="font-size:32px;color:#fff;font-weight:bold;font-family:Impact,sans-serif">USE CODE:</span><span style="background:#4CAF50;color:#fff;padding:18px 40px;border:5px solid #ffd700;letter-spacing:8px;font-size:40px;font-family:Impact,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5)">GIMME</span></div>';
+                    overlay.innerHTML = '<style>@keyframes overlayFade{from{opacity:0}to{opacity:1}}@keyframes textFade{0%{opacity:0;transform:translateY(10px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-10px)}}</style><div style="font-size:56px;font-weight:bold;color:#4CAF50;text-align:center;font-family:Impact,Arial Black,sans-serif;letter-spacing:4px;margin-bottom:30px">💰 '+CLIENT.name.toUpperCase()+'</div><div id="dynamic-text" style="font-size:42px;font-weight:bold;color:#fff;text-align:center;font-family:Impact,sans-serif;margin-bottom:25px;line-height:1.4;min-height:120px"></div><div style="font-size:24px;color:#ffd700;text-align:center;font-family:Arial,sans-serif;margin-bottom:35px;max-width:900px;line-height:1.5">Every one of your '+CLIENT.monthlyVisitors+' monthly visitors<br>sees THEIR OWN personalized experience</div><div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center"><span style="font-size:32px;color:#fff;font-weight:bold;font-family:Impact,sans-serif">USE CODE:</span><span style="background:#4CAF50;color:#fff;padding:18px 40px;border:5px solid #ffd700;letter-spacing:8px;font-size:40px;font-family:Impact,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5)">TheDon</span></div>';
 
                     const parent = img.closest('div,section,main');
                     if (parent) {
@@ -179,8 +179,8 @@
 
         runDemo() {
             setTimeout(() => this.msg('Hey '+CLIENT.name+'! 👋 Watch what happens to this page...','normal'), 1500);
-            setTimeout(() => { this.msg('First, the top banner appears with your name...','normal'); PageMods.addTopBanner(); }, 3500);
-            setTimeout(() => this.msg('<strong>See? It says YOUR name:</strong> "Personalized for '+CLIENT.name+'"','highlight'), 5000);
+            setTimeout(() => { this.msg('First, the top banner appears...','normal'); PageMods.addTopBanner(); }, 3500);
+            setTimeout(() => this.msg('<strong>See? "SO, '+CLIENT.name+'"</strong> - it starts with your name and code <strong>TheDon</strong>','highlight'), 5000);
             setTimeout(() => this.msg('<strong>Now watch the banner text change!</strong> It tells a personalization story...','highlight'), 8000);
             setTimeout(() => this.msg('First your name... then your city ('+CLIENT.city+')... then your vehicle ('+CLIENT.vehicle+')','normal'), 11000);
             setTimeout(() => { this.msg('Now watch the hero banner transform...','normal'); PageMods.replaceHeroBanner(); }, 14000);
@@ -195,21 +195,45 @@
         },
 
         triggerMorph() {
-            this.msg('⚡ Transforming...','important');
-            document.getElementById('avatar-circle').style.animation = 'morphMagic 2.2s cubic-bezier(0.68,-0.55,0.265,1.55),moneyGlow 2s ease-in-out infinite';
+            this.msg('With personalization I could even create an <strong>avatar of the person browsing</strong>, to catch their attention...','important');
 
+            // Transform to photo
             setTimeout(() => {
-                document.getElementById('avatar-robot').style.opacity = '0';
-                document.getElementById('avatar-robot').style.transform = 'scale(0) rotate(360deg)';
+                document.getElementById('avatar-circle').style.animation = 'morphMagic 2.2s cubic-bezier(0.68,-0.55,0.265,1.55),moneyGlow 2s ease-in-out infinite';
 
                 setTimeout(() => {
-                    document.getElementById('avatar-photo').style.opacity = '1';
-                    document.getElementById('avatar-header').innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div style="width:45px;height:45px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,215,0,0.8);box-shadow:0 0 20px rgba(76,175,80,0.6)"><div style="width:100%;height:100%;background-image:url('+CLIENT.photoURL+');background-size:cover;background-position:center"></div></div><div><div style="font-weight:bold;font-size:15px">💰 '+CLIENT.name+'\'s Twin</div><div style="font-size:11px;opacity:0.9">This is how customers see themselves</div></div></div>';
-                    this.makeItRain();
-                }, 500);
-            }, 1100);
+                    document.getElementById('avatar-robot').style.opacity = '0';
+                    document.getElementById('avatar-robot').style.transform = 'scale(0) rotate(360deg)';
 
-            setTimeout(() => this.showFinale(), 2800);
+                    setTimeout(() => {
+                        document.getElementById('avatar-photo').style.opacity = '1';
+                        document.getElementById('avatar-header').innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div style="width:45px;height:45px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,215,0,0.8);box-shadow:0 0 20px rgba(76,175,80,0.6)"><div style="width:100%;height:100%;background-image:url('+CLIENT.photoURL+');background-size:cover;background-position:center"></div></div><div><div style="font-weight:bold;font-size:15px">👤 '+CLIENT.name+'</div><div style="font-size:11px;opacity:0.9">Your personalized avatar</div></div></div>';
+                    }, 500);
+                }, 1100);
+            }, 2000);
+
+            // Say it's too creepy and revert back
+            setTimeout(() => {
+                this.msg('But... <strong>that\'s too creepy</strong> so I wouldn\'t do that for real...','highlight');
+
+                setTimeout(() => {
+                    // Reverse transform back to robot
+                    document.getElementById('avatar-circle').style.animation = 'morphMagic 2.2s cubic-bezier(0.68,-0.55,0.265,1.55) reverse';
+
+                    setTimeout(() => {
+                        document.getElementById('avatar-photo').style.opacity = '0';
+
+                        setTimeout(() => {
+                            document.getElementById('avatar-robot').style.opacity = '1';
+                            document.getElementById('avatar-robot').style.transform = 'scale(1) rotate(0)';
+                            document.getElementById('avatar-header').innerHTML = '<div style="font-weight:bold;font-size:14px">🤖 AI Tour Guide</div><div style="font-size:11px;opacity:0.9">Back to normal!</div>';
+                            document.getElementById('avatar-circle').style.animation = 'avatarBob 2.5s ease-in-out infinite';
+                        }, 500);
+                    }, 1100);
+                }, 1500);
+            }, 6000);
+
+            setTimeout(() => this.showFinale(), 11000);
         },
 
         makeItRain() {
@@ -245,8 +269,8 @@
     Avatar.render();
     Avatar.runDemo();
 
-    console.log('%c✅ SYTE DEMO V3.4 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
+    console.log('%c✅ SYTE DEMO V3.5 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
     console.log('Client: '+CLIENT.company+' ('+CLIENT.name+')');
-    console.log('✨ New: Dynamic banner tells personalization story + Rotating hero text');
+    console.log('✨ New: "SO," banner with TheDon code + Creepy-but-not avatar reveal');
 
 })();
