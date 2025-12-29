@@ -15,6 +15,7 @@
 
         city: 'Sturgis',
         searchKeyword: 'leather motorcycle jacket',
+        vehicle: 'Honda',
 
         facts: [
             "You restored a '73 Shovelhead last winter",
@@ -30,15 +31,52 @@
         addTopBanner() {
             const banner = document.createElement('div');
             banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#2d2d2d,#1a1a1a);color:#fff;text-align:center;padding:12px 20px;border-bottom:3px solid #4CAF50;z-index:999998;animation:slideDown 0.6s;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
-            banner.innerHTML = '<style>@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}</style><div style="font-size:16px;font-weight:bold;color:#4CAF50;font-family:Arial,sans-serif">💰 Personalized for '+CLIENT.name+' <span style="color:#ffd700;margin-left:15px">GET 20% OFF</span> <span id="gimme-code" style="background:#4CAF50;color:#fff;padding:6px 16px;border:2px solid #ffd700;font-size:14px;letter-spacing:2px;cursor:pointer;display:inline-block;margin-left:10px;font-family:Arial,sans-serif;border-radius:4px">GIMME</span></div>';
+            banner.innerHTML = '<style>@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes bannerTextFade{0%{opacity:0;transform:translateY(-5px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(5px)}}</style><div id="banner-text" style="font-size:16px;font-weight:bold;color:#4CAF50;font-family:Arial,sans-serif;min-height:24px"></div>';
             document.body.insertBefore(banner, document.body.firstChild);
 
-            document.getElementById('gimme-code').onclick = function() {
-                navigator.clipboard.writeText('GIMME');
-                this.textContent = '✓ COPIED!';
-                setTimeout(() => this.textContent = 'GIMME', 2000);
+            // Start banner text rotation
+            this.startBannerRotation();
+            console.log('✅ Top banner added with dynamic text');
+        },
+
+        startBannerRotation() {
+            const messages = [
+                '💰 Personalized for <strong>'+CLIENT.name+'</strong> <span style="color:#ffd700;margin-left:15px">GET 20% OFF</span> <span id="gimme-code" style="background:#4CAF50;color:#fff;padding:6px 16px;border:2px solid #ffd700;font-size:14px;letter-spacing:2px;cursor:pointer;display:inline-block;margin-left:10px;font-family:Arial,sans-serif;border-radius:4px">GIMME</span>',
+                '📍 Knowing you live in <strong>'+CLIENT.city+'</strong>, we\'d deliver tomorrow!',
+                '🏍️ We\'d also show you the best gear for your <strong>'+CLIENT.vehicle+'</strong>'
+            ];
+
+            let currentIndex = 0;
+            const textElement = document.getElementById('banner-text');
+
+            if (!textElement) return;
+
+            // Function to update banner text
+            const updateBannerText = () => {
+                textElement.style.animation = 'none';
+                setTimeout(() => {
+                    textElement.innerHTML = messages[currentIndex];
+                    textElement.style.animation = 'bannerTextFade 5s ease-in-out';
+
+                    // Re-attach click handler for GIMME code if it exists
+                    const codeElement = document.getElementById('gimme-code');
+                    if (codeElement) {
+                        codeElement.onclick = function() {
+                            navigator.clipboard.writeText('GIMME');
+                            this.textContent = '✓ COPIED!';
+                            setTimeout(() => this.textContent = 'GIMME', 2000);
+                        };
+                    }
+
+                    currentIndex = (currentIndex + 1) % messages.length;
+                }, 50);
             };
-            console.log('✅ Top banner added');
+
+            // Initial text
+            updateBannerText();
+
+            // Rotate every 5 seconds
+            setInterval(updateBannerText, 5000);
         },
 
         replaceHeroBanner() {
@@ -141,17 +179,19 @@
 
         runDemo() {
             setTimeout(() => this.msg('Hey '+CLIENT.name+'! 👋 Watch what happens to this page...','normal'), 1500);
-            setTimeout(() => { this.msg('First, notice the compact banner at the top...','normal'); PageMods.addTopBanner(); }, 3500);
+            setTimeout(() => { this.msg('First, the top banner appears with your name...','normal'); PageMods.addTopBanner(); }, 3500);
             setTimeout(() => this.msg('<strong>See? It says YOUR name:</strong> "Personalized for '+CLIENT.name+'"','highlight'), 5000);
-            setTimeout(() => { this.msg('Now watch the hero banner - the text will change every few seconds...','normal'); PageMods.replaceHeroBanner(); }, 7500);
-            setTimeout(() => this.msg('<strong>Watch the text rotate!</strong> Each message shows a different benefit of personalization.','highlight'), 10000);
-            setTimeout(() => { this.msg('Adding your personalized recommendations...','normal'); PageMods.addPersonalizationBox(); }, 13000);
-            setTimeout(() => PageMods.addFloatingProof(), 15000);
-            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 16500);
-            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 19500);
-            setTimeout(() => this.msg('They buy more when talking to <strong>their twin</strong>. Someone who <em>gets them</em>.','important'), 22500);
-            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Watch this... 👀</div><div style="font-size:14px;color:#666">(Look at the avatar)</div></div>','cta'), 25500);
-            setTimeout(() => this.triggerMorph(), 28500);
+            setTimeout(() => this.msg('<strong>Now watch the banner text change!</strong> It tells a personalization story...','highlight'), 8000);
+            setTimeout(() => this.msg('First your name... then your city ('+CLIENT.city+')... then your vehicle ('+CLIENT.vehicle+')','normal'), 11000);
+            setTimeout(() => { this.msg('Now watch the hero banner transform...','normal'); PageMods.replaceHeroBanner(); }, 14000);
+            setTimeout(() => this.msg('<strong>The hero text rotates too!</strong> Each message shows a different benefit.','highlight'), 17000);
+            setTimeout(() => { this.msg('Adding your personalized recommendations...','normal'); PageMods.addPersonalizationBox(); }, 20000);
+            setTimeout(() => PageMods.addFloatingProof(), 22000);
+            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 23500);
+            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 26500);
+            setTimeout(() => this.msg('They buy more when talking to <strong>their twin</strong>. Someone who <em>gets them</em>.','important'), 29500);
+            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Watch this... 👀</div><div style="font-size:14px;color:#666">(Look at the avatar)</div></div>','cta'), 32500);
+            setTimeout(() => this.triggerMorph(), 35500);
         },
 
         triggerMorph() {
@@ -205,8 +245,8 @@
     Avatar.render();
     Avatar.runDemo();
 
-    console.log('%c✅ SYTE DEMO V3.3 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
+    console.log('%c✅ SYTE DEMO V3.4 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
     console.log('Client: '+CLIENT.company+' ('+CLIENT.name+')');
-    console.log('✨ New: Compact top banner + Dynamic rotating hero text');
+    console.log('✨ New: Dynamic banner tells personalization story + Rotating hero text');
 
 })();
