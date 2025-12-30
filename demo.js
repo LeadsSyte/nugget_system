@@ -28,55 +28,12 @@
     // PAGE MODIFICATIONS
     // ============================================
     const PageMods = {
-        addTopBanner() {
-            const banner = document.createElement('div');
-            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#2d2d2d,#1a1a1a);color:#fff;text-align:center;padding:12px 20px;border-bottom:3px solid #4CAF50;z-index:999998;animation:slideDown 0.6s;box-shadow:0 2px 12px rgba(0,0,0,0.3)';
-            banner.innerHTML = '<style>@keyframes slideDown{from{transform:translateY(-100%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes bannerTextFade{0%{opacity:0;transform:translateY(-5px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(5px)}}</style><div id="banner-text" style="font-size:16px;font-weight:bold;color:#4CAF50;font-family:Arial,sans-serif;min-height:24px"></div>';
-            document.body.insertBefore(banner, document.body.firstChild);
-
-            // Start banner text rotation
-            this.startBannerRotation();
-            console.log('✅ Top banner added with dynamic text');
-        },
-
-        startBannerRotation() {
-            const messages = [
-                'SO, <strong>'+CLIENT.name+'</strong> <span style="color:#ffd700;margin-left:15px">GET 20% OFF WITH CODE:</span> <span id="gimme-code" style="background:#4CAF50;color:#fff;padding:6px 16px;border:2px solid #ffd700;font-size:14px;letter-spacing:2px;cursor:pointer;display:inline-block;margin-left:10px;font-family:Arial,sans-serif;border-radius:4px">TheDon</span>',
-                'SO, knowing you live in <strong>'+CLIENT.city+'</strong>, we\'d deliver tomorrow!',
-                'SO, we\'d show you the best gear for your <strong>'+CLIENT.vehicle+'</strong>'
-            ];
-
-            let currentIndex = 0;
-            const textElement = document.getElementById('banner-text');
-
-            if (!textElement) return;
-
-            // Function to update banner text
-            const updateBannerText = () => {
-                textElement.style.animation = 'none';
-                setTimeout(() => {
-                    textElement.innerHTML = messages[currentIndex];
-                    textElement.style.animation = 'bannerTextFade 5s ease-in-out';
-
-                    // Re-attach click handler for code if it exists
-                    const codeElement = document.getElementById('gimme-code');
-                    if (codeElement) {
-                        codeElement.onclick = function() {
-                            navigator.clipboard.writeText('TheDon');
-                            this.textContent = '✓ COPIED!';
-                            setTimeout(() => this.textContent = 'TheDon', 2000);
-                        };
-                    }
-
-                    currentIndex = (currentIndex + 1) % messages.length;
-                }, 50);
-            };
-
-            // Initial text
-            updateBannerText();
-
-            // Rotate every 5 seconds
-            setInterval(updateBannerText, 5000);
+        addLeftPanel() {
+            const panel = document.createElement('div');
+            panel.style.cssText = 'position:fixed;left:20px;top:150px;width:320px;background:rgba(255,255,255,0.98);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:4px solid #4CAF50;z-index:999997;animation:panelSlide 1s;font-family:Arial,sans-serif;overflow:hidden';
+            panel.innerHTML = '<style>@keyframes panelSlide{from{transform:translateX(-400px);opacity:0}to{transform:translateX(0);opacity:1}}</style><div style="background:linear-gradient(135deg,#4CAF50,#2d8b3e);padding:20px;color:#fff"><div style="font-size:18px;font-weight:bold;margin-bottom:8px">⚡ NEW CUSTOMER PERKS</div><div style="font-size:13px;opacity:0.95">Personalized just for you</div></div><div style="padding:24px"><div style="font-size:15px;font-weight:bold;color:#4CAF50;margin-bottom:16px">🎯 What personalization means:</div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Products matched to your style</div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Faster delivery to <strong>'+CLIENT.city+'</strong></div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Recommendations for <strong>'+CLIENT.vehicle+'</strong> riders</div><div style="margin-top:20px;padding:16px;background:rgba(76,175,80,0.1);border-radius:10px;text-align:center"><div style="font-size:13px;color:#666;margin-bottom:8px">Your exclusive code:</div><div style="font-size:24px;font-weight:bold;color:#4CAF50;letter-spacing:2px">TheDon</div><div style="font-size:12px;color:#999;margin-top:4px">20% off your first order</div></div></div>';
+            document.body.appendChild(panel);
+            console.log('✅ Left personalization panel added');
         },
 
         replaceHeroBanner() {
@@ -179,23 +136,25 @@
 
         runDemo() {
             setTimeout(() => this.msg('Hey '+CLIENT.name+'! 👋 Watch what happens to this page...','normal'), 1500);
-            setTimeout(() => { this.msg('First, the top banner appears...','normal'); PageMods.addTopBanner(); }, 3500);
-            setTimeout(() => this.msg('<strong>See? "SO, '+CLIENT.name+'"</strong> - it starts with your name and code <strong>TheDon</strong>','highlight'), 5000);
-            setTimeout(() => this.msg('<strong>Now watch the banner text change!</strong> It tells a personalization story...','highlight'), 8000);
-            setTimeout(() => this.msg('First your name... then your city ('+CLIENT.city+')... then your vehicle ('+CLIENT.vehicle+')','normal'), 11000);
-            setTimeout(() => { this.msg('Now watch the hero banner transform...','normal'); PageMods.replaceHeroBanner(); }, 14000);
-            setTimeout(() => this.msg('<strong>The hero text rotates too!</strong> Each message shows a different benefit.','highlight'), 17000);
-            setTimeout(() => { this.msg('Adding your personalized recommendations...','normal'); PageMods.addPersonalizationBox(); }, 20000);
-            setTimeout(() => PageMods.addFloatingProof(), 22000);
-            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 23500);
-            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 26500);
-            setTimeout(() => this.msg('They buy more when talking to <strong>their twin</strong>. Someone who <em>gets them</em>.','important'), 29500);
-            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Watch this... 👀</div><div style="font-size:14px;color:#666">(Look at the avatar)</div></div>','cta'), 32500);
-            setTimeout(() => this.triggerMorph(), 35500);
+            setTimeout(() => { this.msg('First, a personalized panel appears on the left...','normal'); PageMods.addLeftPanel(); }, 3500);
+            setTimeout(() => this.msg('<strong>See the panel?</strong> It shows personalized perks for you - delivery to <strong>'+CLIENT.city+'</strong>, recommendations for <strong>'+CLIENT.vehicle+'</strong> riders, and your code <strong>TheDon</strong>','highlight'), 5500);
+            setTimeout(() => { this.msg('Now watch the hero banner transform...','normal'); PageMods.replaceHeroBanner(); }, 10000);
+            setTimeout(() => this.msg('<strong>The hero text rotates!</strong> Each message shows a different benefit of personalization.','highlight'), 13000);
+            setTimeout(() => { this.msg('Adding more personalized content...','normal'); PageMods.addPersonalizationBox(); }, 16000);
+            setTimeout(() => PageMods.addFloatingProof(), 18000);
+            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 19500);
+            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 22500);
+            setTimeout(() => this.msg('They buy more when they see products matched to <strong>their interests</strong>.','important'), 25500);
+            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Let me show you something... 👀</div><div style="font-size:14px;color:#666">(Watch what I can do)</div></div>','cta'), 28500);
+            setTimeout(() => this.triggerMorph(), 31500);
         },
 
         triggerMorph() {
-            this.msg('With personalization I could even create an <strong>avatar of the person browsing</strong>, to catch their attention...','important');
+            this.msg('With personalization I can better cater to the person I\'m speaking to. For example, if I knew you were <strong>wearing an orange hat</strong> I might suggest something orange...','normal');
+
+            setTimeout(() => {
+                this.msg('Or if I knew you like <strong>coffee</strong> I might suggest a coffee-themed jacket...','normal');
+            }, 3000);
 
             // Transform to photo
             setTimeout(() => {
@@ -207,10 +166,11 @@
 
                     setTimeout(() => {
                         document.getElementById('avatar-photo').style.opacity = '1';
-                        document.getElementById('avatar-header').innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div style="width:45px;height:45px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,215,0,0.8);box-shadow:0 0 20px rgba(76,175,80,0.6)"><div style="width:100%;height:100%;background-image:url('+CLIENT.photoURL+');background-size:cover;background-position:center"></div></div><div><div style="font-weight:bold;font-size:15px">👤 '+CLIENT.name+'</div><div style="font-size:11px;opacity:0.9">Your personalized avatar</div></div></div>';
+                        document.getElementById('avatar-header').innerHTML = '<div style="display:flex;align-items:center;gap:12px"><div style="width:45px;height:45px;border-radius:50%;overflow:hidden;border:3px solid rgba(255,215,0,0.8);box-shadow:0 0 20px rgba(76,175,80,0.6)"><div style="width:100%;height:100%;background-image:url('+CLIENT.photoURL+');background-size:cover;background-position:center"></div></div><div><div style="font-weight:bold;font-size:15px">👤 '+CLIENT.name+'</div><div style="font-size:11px;opacity:0.9">Personalized greeting</div></div></div>';
+                        this.msg('I might even greet you by name... <strong>'+CLIENT.name+'</strong>','important');
                     }, 500);
                 }, 1100);
-            }, 2000);
+            }, 6000);
 
             // Say it's too creepy and revert back
             setTimeout(() => {
@@ -231,9 +191,9 @@
                         }, 500);
                     }, 1100);
                 }, 1500);
-            }, 6000);
+            }, 10000);
 
-            setTimeout(() => this.showFinale(), 11000);
+            setTimeout(() => this.showFinale(), 15000);
         },
 
         makeItRain() {
@@ -269,8 +229,8 @@
     Avatar.render();
     Avatar.runDemo();
 
-    console.log('%c✅ SYTE DEMO V3.5 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
+    console.log('%c✅ SYTE DEMO V4.0 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
     console.log('Client: '+CLIENT.company+' ('+CLIENT.name+')');
-    console.log('✨ New: "SO," banner with TheDon code + Creepy-but-not avatar reveal');
+    console.log('✨ New: Left panel design + Contextual avatar messaging (orange hat, coffee)');
 
 })();
