@@ -5,7 +5,7 @@
     // 🎯 CUSTOMIZE FOR EACH CLIENT
     // ============================================
     const CLIENT = {
-        name: 'Mike',
+        name: 'Dana',
         company: 'Hot Leathers',
         photoURL: 'https://randomuser.me/api/portraits/men/32.jpg', // Replace with their LinkedIn photo
 
@@ -15,13 +15,7 @@
 
         city: 'JHB',
         searchKeyword: 'leather motorcycle jacket',
-        vehicle: 'Honda',
-
-        facts: [
-            "You restored a '73 Shovelhead last winter",
-            "You ride to Sturgis every August",
-            "You started Hot Leathers 40 years ago"
-        ]
+        vehicle: 'Honda'
     };
 
     // ============================================
@@ -30,79 +24,68 @@
     const PageMods = {
         addLeftPanel() {
             const panel = document.createElement('div');
+            panel.id = 'perks-panel';
             panel.style.cssText = 'position:fixed;left:20px;top:150px;width:320px;background:rgba(255,255,255,0.98);border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.3);border:4px solid #4CAF50;z-index:999997;animation:panelSlide 1s;font-family:Arial,sans-serif;overflow:hidden';
-            panel.innerHTML = '<style>@keyframes panelSlide{from{transform:translateX(-400px);opacity:0}to{transform:translateX(0);opacity:1}}</style><div style="background:linear-gradient(135deg,#4CAF50,#2d8b3e);padding:20px;color:#fff"><div style="font-size:18px;font-weight:bold;margin-bottom:8px">⚡ NEW CUSTOMER PERKS</div><div style="font-size:13px;opacity:0.95">Personalized just for you</div></div><div style="padding:24px"><div style="font-size:15px;font-weight:bold;color:#4CAF50;margin-bottom:16px">🎯 What personalization means:</div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Products matched to your style</div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Faster delivery to <strong>'+CLIENT.city+'</strong></div><div style="font-size:14px;color:#333;line-height:1.8;margin-bottom:12px">✓ Recommendations for <strong>'+CLIENT.vehicle+'</strong> riders</div><div style="margin-top:20px;padding:16px;background:rgba(76,175,80,0.1);border-radius:10px;text-align:center"><div style="font-size:13px;color:#666;margin-bottom:8px">Your exclusive code:</div><div style="font-size:24px;font-weight:bold;color:#4CAF50;letter-spacing:2px">TheDon</div><div style="font-size:12px;color:#999;margin-top:4px">20% off your first order</div></div></div>';
+            panel.innerHTML = '<style>@keyframes panelSlide{from{transform:translateX(-400px);opacity:0}to{transform:translateX(0);opacity:1}}@keyframes elementFade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}</style><div id="panel-header" style="background:linear-gradient(135deg,#4CAF50,#2d8b3e);padding:20px;color:#fff;opacity:0"><div style="font-size:18px;font-weight:bold;margin-bottom:8px">⚡ NEW CUSTOMER PERKS</div><div style="font-size:13px;opacity:0.95">Personalized just for you</div></div><div id="panel-content" style="padding:24px"></div>';
             document.body.appendChild(panel);
             console.log('✅ Left personalization panel added');
         },
 
-        replaceHeroBanner() {
-            document.querySelectorAll('img').forEach(img => {
-                if (img.width > 600 || img.naturalWidth > 600) {
-                    const overlay = document.createElement('div');
-                    overlay.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,rgba(0,0,0,0.90),rgba(26,26,26,0.93));display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px;z-index:100;animation:overlayFade 0.8s';
-                    overlay.innerHTML = '<style>@keyframes overlayFade{from{opacity:0}to{opacity:1}}@keyframes textFade{0%{opacity:0;transform:translateY(10px)}10%{opacity:1;transform:translateY(0)}90%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-10px)}}</style><div style="font-size:56px;font-weight:bold;color:#4CAF50;text-align:center;font-family:Impact,Arial Black,sans-serif;letter-spacing:4px;margin-bottom:30px">💰 '+CLIENT.name.toUpperCase()+'</div><div id="dynamic-text" style="font-size:42px;font-weight:bold;color:#fff;text-align:center;font-family:Impact,sans-serif;margin-bottom:25px;line-height:1.4;min-height:120px"></div><div style="font-size:24px;color:#ffd700;text-align:center;font-family:Arial,sans-serif;margin-bottom:35px;max-width:900px;line-height:1.5">Every one of your '+CLIENT.monthlyVisitors+' monthly visitors<br>sees THEIR OWN personalized experience</div><div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center"><span style="font-size:32px;color:#fff;font-weight:bold;font-family:Impact,sans-serif">USE CODE:</span><span style="background:#4CAF50;color:#fff;padding:18px 40px;border:5px solid #ffd700;letter-spacing:8px;font-size:40px;font-family:Impact,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5)">TheDon</span></div>';
-
-                    const parent = img.closest('div,section,main');
-                    if (parent) {
-                        parent.style.position = 'relative';
-                        parent.appendChild(overlay);
-
-                        // Start dynamic text rotation
-                        this.startTextRotation();
-                        console.log('✅ Hero banner replaced with dynamic text');
-                    }
+        animatePanelElements() {
+            // Header appears first
+            setTimeout(() => {
+                const header = document.getElementById('panel-header');
+                if (header) {
+                    header.style.animation = 'elementFade 0.6s forwards';
+                    header.style.opacity = '1';
                 }
-            });
+            }, 500);
+
+            // Add elements one by one
+            const content = document.getElementById('panel-content');
+            if (!content) return;
+
+            // Title
+            setTimeout(() => {
+                const title = document.createElement('div');
+                title.style.cssText = 'font-size:15px;font-weight:bold;color:#4CAF50;margin-bottom:16px;opacity:0;animation:elementFade 0.6s forwards';
+                title.innerHTML = '🎯 What personalization means:';
+                content.appendChild(title);
+            }, 1200);
+
+            // Benefit 1
+            setTimeout(() => {
+                const benefit1 = document.createElement('div');
+                benefit1.style.cssText = 'font-size:14px;color:#333;line-height:1.8;margin-bottom:12px;opacity:0;animation:elementFade 0.6s forwards';
+                benefit1.innerHTML = '✓ Products matched to your style';
+                content.appendChild(benefit1);
+            }, 1800);
+
+            // Benefit 2
+            setTimeout(() => {
+                const benefit2 = document.createElement('div');
+                benefit2.style.cssText = 'font-size:14px;color:#333;line-height:1.8;margin-bottom:12px;opacity:0;animation:elementFade 0.6s forwards';
+                benefit2.innerHTML = '✓ Faster delivery to <strong>'+CLIENT.city+'</strong>';
+                content.appendChild(benefit2);
+            }, 2400);
+
+            // Benefit 3
+            setTimeout(() => {
+                const benefit3 = document.createElement('div');
+                benefit3.style.cssText = 'font-size:14px;color:#333;line-height:1.8;margin-bottom:12px;opacity:0;animation:elementFade 0.6s forwards';
+                benefit3.innerHTML = '✓ Recommendations for <strong>'+CLIENT.vehicle+'</strong> riders';
+                content.appendChild(benefit3);
+            }, 3000);
+
+            // Code section
+            setTimeout(() => {
+                const codeSection = document.createElement('div');
+                codeSection.style.cssText = 'margin-top:20px;padding:16px;background:rgba(76,175,80,0.1);border-radius:10px;text-align:center;opacity:0;animation:elementFade 0.6s forwards';
+                codeSection.innerHTML = '<div style="font-size:13px;color:#666;margin-bottom:8px">Your exclusive code:</div><div style="font-size:24px;font-weight:bold;color:#4CAF50;letter-spacing:2px">TheDon</div><div style="font-size:12px;color:#999;margin-top:4px">20% off your first order</div>';
+                content.appendChild(codeSection);
+            }, 3600);
         },
 
-        startTextRotation() {
-            const messages = [
-                "MORE PERSONALIZATION =<br>MORE MONEY FOR YOU",
-                "CUSTOMERS SEE<br>THEMSELVES IN YOUR STORE",
-                "EACH VISITOR GETS<br>THEIR OWN TWIN",
-                "PERSONALIZED EXPERIENCES<br>MEAN HIGHER CONVERSIONS",
-                "THEY BUY MORE WHEN<br>IT FEELS PERSONAL"
-            ];
-
-            let currentIndex = 0;
-            const textElement = document.getElementById('dynamic-text');
-
-            if (!textElement) return;
-
-            // Function to update text
-            const updateText = () => {
-                textElement.style.animation = 'none';
-                setTimeout(() => {
-                    textElement.innerHTML = messages[currentIndex];
-                    textElement.style.animation = 'textFade 4s ease-in-out';
-                    currentIndex = (currentIndex + 1) % messages.length;
-                }, 50);
-            };
-
-            // Initial text
-            updateText();
-
-            // Rotate every 4 seconds
-            setInterval(updateText, 4000);
-        },
-
-        addPersonalizationBox() {
-            const hero = document.querySelector('main,.main-content,[role="main"],.hero,.banner');
-            if (hero) {
-                const box = document.createElement('div');
-                box.innerHTML = '<style>@keyframes boxFade{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}</style><div style="position:relative;background:rgba(76,175,80,0.08);padding:30px;margin:20px auto;max-width:1200px;border-left:5px solid #4CAF50;animation:boxFade 1s;border-radius:8px"><div style="font-size:20px;color:#4CAF50;font-weight:bold;margin-bottom:12px;font-family:Impact,sans-serif">⚡ PERSONALIZED FOR '+CLIENT.name.toUpperCase()+'</div><div style="font-size:16px;color:#333;line-height:1.6;font-family:Arial,sans-serif">Based on your interests in <strong>'+CLIENT.searchKeyword+'</strong> and your location in <strong>'+CLIENT.city+'</strong> - here are our top recommendations for riders like you.</div></div>';
-                hero.insertBefore(box, hero.firstChild);
-                console.log('✅ Personalization box added');
-            }
-        },
-
-        addFloatingProof() {
-            const proof = document.createElement('div');
-            proof.innerHTML = '<style>@keyframes proofSlide{from{transform:translateX(350px);opacity:0}to{transform:translateX(0);opacity:1}}</style><div style="position:fixed;top:70px;right:20px;background:rgba(255,255,255,0.98);padding:20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.2);border:3px solid #4CAF50;z-index:999997;max-width:280px;animation:proofSlide 1s;font-family:Arial,sans-serif"><div style="font-size:14px;font-weight:bold;color:#4CAF50;margin-bottom:10px">✅ VERIFIED RIDER</div><div style="font-size:13px;color:#666;line-height:1.5">We\'ve matched you with gear that fits your style and riding preferences.</div><div style="margin-top:12px;padding-top:12px;border-top:2px solid #eee;font-size:12px;color:#999">🔒 Your data is safe and private</div></div>';
-            document.body.appendChild(proof);
-            console.log('✅ Floating proof added');
-        }
     };
 
     // ============================================
@@ -136,17 +119,18 @@
 
         runDemo() {
             setTimeout(() => this.msg('Hey '+CLIENT.name+'! 👋 Watch what happens to this page...','normal'), 1500);
-            setTimeout(() => { this.msg('First, a personalized panel appears on the left...','normal'); PageMods.addLeftPanel(); }, 3500);
-            setTimeout(() => this.msg('<strong>See the panel?</strong> It shows personalized perks for you - delivery to <strong>'+CLIENT.city+'</strong>, recommendations for <strong>'+CLIENT.vehicle+'</strong> riders, and your code <strong>TheDon</strong>','highlight'), 5500);
-            setTimeout(() => { this.msg('Now watch the hero banner transform...','normal'); PageMods.replaceHeroBanner(); }, 10000);
-            setTimeout(() => this.msg('<strong>The hero text rotates!</strong> Each message shows a different benefit of personalization.','highlight'), 13000);
-            setTimeout(() => { this.msg('Adding more personalized content...','normal'); PageMods.addPersonalizationBox(); }, 16000);
-            setTimeout(() => PageMods.addFloatingProof(), 18000);
-            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 19500);
-            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 22500);
-            setTimeout(() => this.msg('They buy more when they see products matched to <strong>their interests</strong>.','important'), 25500);
-            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Let me show you something... 👀</div><div style="font-size:14px;color:#666">(Watch what I can do)</div></div>','cta'), 28500);
-            setTimeout(() => this.triggerMorph(), 31500);
+            setTimeout(() => {
+                this.msg('First, a personalized panel appears on the left...','normal');
+                PageMods.addLeftPanel();
+                PageMods.animatePanelElements();
+            }, 3500);
+            setTimeout(() => this.msg('<strong>See the panel?</strong> Each element appears one by one - showing perks personalized for you!','highlight'), 8000);
+            setTimeout(() => this.msg('Delivery to <strong>'+CLIENT.city+'</strong>, recommendations for <strong>'+CLIENT.vehicle+'</strong> riders, and your exclusive code <strong>TheDon</strong>','normal'), 11000);
+            setTimeout(() => this.msg('Your site gets <strong>'+CLIENT.monthlyVisitors+' visitors/month</strong> at <strong>'+CLIENT.conversionRate+' CR</strong> = <strong>'+CLIENT.monthlyRevenue+'/month</strong>','normal'), 14500);
+            setTimeout(() => this.msg('<strong>Customers convert better when they feel understood.</strong> When it\'s personal.','highlight'), 17500);
+            setTimeout(() => this.msg('They buy more when they see products matched to <strong>their interests</strong>.','important'), 20500);
+            setTimeout(() => this.msg('<div style="text-align:center;padding:20px;background:rgba(102,126,234,0.1);border-radius:12px;border:2px solid #667eea"><div style="font-size:17px;font-weight:bold;color:#667eea;margin-bottom:10px">Let me show you something... 👀</div><div style="font-size:14px;color:#666">(Watch what I can do with personalization)</div></div>','cta'), 23500);
+            setTimeout(() => this.triggerMorph(), 26500);
         },
 
         triggerMorph() {
@@ -193,34 +177,12 @@
                 }, 1500);
             }, 10000);
 
-            setTimeout(() => this.showFinale(), 15000);
+            // Final message
+            setTimeout(() => {
+                this.msg('That\'s personalization! <strong>Every visitor</strong> gets their own customized experience. 🎯','highlight');
+            }, 15000);
         },
 
-        makeItRain() {
-            const rain = document.getElementById('money-rain');
-            rain.style.display = 'block';
-
-            const symbols = ['💵','💰','💸','💴','💶','💷','🤑'];
-            for (let i = 0; i < 80; i++) {
-                setTimeout(() => {
-                    const money = document.createElement('div');
-                    money.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-                    money.style.cssText = 'position:absolute;left:'+Math.random()*100+'%;top:-50px;font-size:'+(Math.random()*20+25)+'px;animation:moneyFall '+(Math.random()*2+3)+'s linear;opacity:'+(Math.random()*0.5+0.5)+';pointer-events:none';
-                    rain.appendChild(money);
-                    setTimeout(() => money.remove(), 6000);
-                }, i * 60);
-            }
-
-            setTimeout(() => rain.style.display = 'none', 8000);
-            console.log('💰 MAKING IT RAIN!');
-        },
-
-        showFinale() {
-            setTimeout(() => this.msg('<strong>This is '+CLIENT.name+'.</strong> This is YOU.','personal'), 1000);
-            setTimeout(() => this.msg(CLIENT.facts[0]+'. '+CLIENT.facts[1]+'.','personal'), 3500);
-            setTimeout(() => this.msg('When your customers visit, <strong>they see THEMSELVES</strong>. Not a generic store. <em>Themselves</em>.','important'), 6500);
-            setTimeout(() => this.msg('<div style="padding:24px;background:linear-gradient(135deg,rgba(76,175,80,0.2) 0%,rgba(255,215,0,0.2) 100%);border-radius:16px;border:3px solid #4CAF50"><div style="font-size:22px;font-weight:bold;margin-bottom:16px;color:#000;text-align:center">💰 More Personalization = More Money</div><div style="font-size:16px;line-height:1.7;text-align:center"><strong>A more personalized experience for YOUR customers.</strong><br><span style="font-size:20px;color:#4CAF50;font-weight:bold">More money for YOU.</span></div><div style="margin-top:18px;padding-top:18px;border-top:2px solid rgba(76,175,80,0.3);font-size:14px;text-align:center;color:#666">Each of your <strong>'+CLIENT.monthlyVisitors+' visitors</strong> gets their own twin</div></div>','important'), 10000);
-        }
     };
 
     // ============================================
@@ -229,8 +191,8 @@
     Avatar.render();
     Avatar.runDemo();
 
-    console.log('%c✅ SYTE DEMO V4.0 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
+    console.log('%c✅ SYTE DEMO V5.0 READY!', 'background:#4CAF50;color:#fff;font-size:18px;padding:12px;font-weight:bold');
     console.log('Client: '+CLIENT.company+' ('+CLIENT.name+')');
-    console.log('✨ New: Left panel design + Contextual avatar messaging (orange hat, coffee)');
+    console.log('✨ New: Minimal design - Left panel only with animated reveals');
 
 })();
