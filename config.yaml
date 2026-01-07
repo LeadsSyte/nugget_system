@@ -1,0 +1,95 @@
+# Google Ads Agent Configuration
+
+# Gemini Settings
+gemini:
+  model: "gemini-2.0-flash-exp"  # Recommended for best balance
+  temperature: 0.7  # Balance between creativity and consistency
+  max_tokens: 8192
+
+# Performance Thresholds
+performance:
+  # Days of historical data to analyze
+  lookback_days: 30
+
+  # Minimum metrics for ad copy to be considered successful
+  min_impressions_for_analysis: 1000
+  min_clicks_for_analysis: 10
+
+  # CTR improvement threshold (%)
+  ctr_improvement_threshold: 10
+
+  # Cost per conversion threshold change (%)
+  cpc_threshold_change: 15
+
+# Bid Management
+bidding:
+  # Maximum bid adjustment percentage in one day
+  max_bid_change_percent: 20
+
+  # Minimum bid (in account currency)
+  min_bid: 0.10
+
+  # Maximum bid (in account currency)
+  max_bid: 50.00
+
+  # Enable automated bid adjustments
+  auto_apply_bids: true
+
+# Ad Copy Management
+ad_copy:
+  # Enable automated ad creation
+  auto_create_ads: true
+
+  # Number of ad variations to test
+  variations_per_ad_group: 3
+
+  # Minimum days before pausing underperforming ads
+  min_days_before_pause: 14
+
+# Keyword Management
+keywords:
+  # Enable automated keyword additions
+  auto_add_keywords: true
+
+  # Enable automated negative keyword additions
+  auto_add_negative_keywords: true
+
+  # Minimum search volume for new keywords
+  min_search_volume: 100
+
+  # Maximum CPC for new keywords
+  max_keyword_cpc: 10.00
+
+# Logging
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR
+  level: "INFO"
+
+  # Keep logs for X days
+  retention_days: 90
+
+  # Log file path
+  log_dir: "logs"
+
+  # Decision log path (AI justifications)
+  decision_log_dir: "decisions"
+
+# Approval Settings
+approval:
+  # Require manual approval for all actions (recommended to start)
+  # Set to false for fully autonomous operation after you're comfortable
+  enabled: true
+
+  # Generate email notifications for pending approvals
+  email_notifications: true
+
+# Safety Settings
+safety:
+  # Dry run mode (logs actions but doesn't apply them)
+  dry_run: false
+
+  # Require minimum account spend before making changes
+  min_account_spend: 100
+
+  # Maximum daily actions per campaign
+  max_actions_per_campaign: 10
