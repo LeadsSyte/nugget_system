@@ -21,6 +21,7 @@ from src.keyword_manager import KeywordManager
 from src.performance_analyzer import PerformanceAnalyzer
 from src.approval_system import ApprovalSystem
 from src.email_notifier import EmailNotifier
+from src.csv_reporter import CSVReporter
 
 
 def main():
@@ -57,6 +58,7 @@ def main():
         performance_analyzer = PerformanceAnalyzer(config, logger)
         approval_system = ApprovalSystem(config, logger)
         email_notifier = EmailNotifier(config, logger)
+        csv_reporter = CSVReporter(config, logger)
 
         # Initialize optimization modules
         bid_optimizer = BidOptimizer(config, logger, gemini_brain, google_ads)
@@ -205,6 +207,24 @@ def main():
                 actions_summary=actions_summary,
                 approval_file=approval_file
             )
+
+        # Export to CSV
+        print("\n📊 Exporting data to CSV...")
+        performance_csv = csv_reporter.export_performance_summary(all_campaign_analyses)
+        if all_actions:
+            actions_csv = csv_reporter.export_actions(all_actions)
+
+        # Export decisions if available
+        decision_log_path = logger.decision_log_path
+        csv_reporter.export_decisions(decision_log_path)
+
+        # Create summary report
+        summary_report = csv_reporter.create_summary_report(all_campaign_analyses, all_actions)
+
+        if performance_csv:
+            print(f"✓ Performance data: {performance_csv}")
+        print(f"✓ Summary report: {summary_report}")
+        print(f"✓ All reports saved in: reports/")
 
         print("\n" + "=" * 80)
         print("✅ AGENT EXECUTION COMPLETE")
