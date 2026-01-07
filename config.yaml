@@ -86,7 +86,7 @@ approval:
 # Safety Settings
 safety:
   # Dry run mode (logs actions but doesn't apply them)
-  dry_run: false
+  dry_run: true
 
   # Require minimum account spend before making changes
   min_account_spend: 100
