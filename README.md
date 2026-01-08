@@ -42,10 +42,37 @@ The Nugget Personalization Agent tracks user behavior and personalizes the shopp
 
 ## Files
 
+### Base Personalization System
 - `personalization-agent.js` - Main personalization script
 - `SHOPIFY_INSTALLATION_GUIDE.md` - Detailed installation instructions
 - `EXAMPLES.md` - Code examples and implementations
 - `CONFIGURATION.md` - Configuration and customization guide
+
+### Hot Leathers Customization
+- `hotleathers-personalization.js` - Exit-intent with RIDE5 discount for hotleathers.com
+- `thank-you-page-upsell.liquid` - Post-purchase upsell (Shopify Plus)
+- `post-purchase-upsell.jsx` - Advanced post-purchase extension (optional)
+- `HOTLEATHERS_INSTALLATION.md` - Complete Hot Leathers installation guide
+- `HOTLEATHERS_QUICK_REFERENCE.md` - Quick reference and troubleshooting
+
+## Hot Leathers Special Features
+
+Custom implementation for hotleathers.com with:
+
+### Exit-Intent with RIDE5 Discount
+- Detects when customers are about to leave with items in cart
+- Shows personalized popup with 5% off discount code (RIDE5)
+- Geo-targeted messaging (e.g., "Don't ride off without this, New York!")
+- **Only shows if no discount is already applied** (respects existing discounts)
+- Safe implementation - won't break your site
+
+### Post-Purchase Upsell
+- Shows relevant product recommendations on order confirmation page
+- Automatically applies RIDE5 discount to recommended products
+- Smart recommendations based on what customer purchased
+- Example: Bought jacket → Recommends gloves, helmet
+
+See `HOTLEATHERS_INSTALLATION.md` for complete setup instructions.
 
 ## What It Does
 
