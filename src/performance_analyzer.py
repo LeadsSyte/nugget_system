@@ -55,6 +55,7 @@ class PerformanceAnalyzer:
     def _calculate_health_indicators(self, ctr, conversion_rate, cost_per_conversion, roas):
         """
         Calculate health indicators based on performance metrics
+        Focus: Lead Gen optimization (Conversions & Cost Per Conversion)
 
         Returns: dict with status flags
         """
@@ -62,29 +63,31 @@ class PerformanceAnalyzer:
             'ctr_status': 'good',  # good, warning, poor
             'conversion_rate_status': 'good',
             'cost_efficiency_status': 'good',
-            'roas_status': 'good',
             'overall_health': 'healthy'  # healthy, needs_attention, critical
         }
 
-        # CTR benchmarks
+        # CTR benchmarks (lead gen typically has lower CTR than ecommerce)
         if ctr < 1.0:
             indicators['ctr_status'] = 'poor'
         elif ctr < 2.0:
             indicators['ctr_status'] = 'warning'
 
-        # Conversion rate benchmarks
-        if conversion_rate < 1.0:
+        # Conversion rate benchmarks (leads)
+        if conversion_rate < 2.0:
             indicators['conversion_rate_status'] = 'poor'
-        elif conversion_rate < 2.0:
+        elif conversion_rate < 5.0:
             indicators['conversion_rate_status'] = 'warning'
 
-        # ROAS benchmarks
-        if roas < 2.0:
-            indicators['roas_status'] = 'poor'
-        elif roas < 4.0:
-            indicators['roas_status'] = 'warning'
+        # Cost Per Conversion benchmarks (PRIMARY METRIC FOR LEAD GEN)
+        # Thresholds can be configured per industry
+        if cost_per_conversion == 0:
+            indicators['cost_efficiency_status'] = 'poor'  # No conversions
+        elif cost_per_conversion > 100:
+            indicators['cost_efficiency_status'] = 'poor'
+        elif cost_per_conversion > 50:
+            indicators['cost_efficiency_status'] = 'warning'
 
-        # Overall health assessment
+        # Overall health assessment (prioritize conversion metrics for lead gen)
         poor_count = sum(1 for status in indicators.values() if status == 'poor')
         warning_count = sum(1 for status in indicators.values() if status == 'warning')
 
@@ -152,8 +155,8 @@ CAMPAIGN BREAKDOWN:
 
             summary += f"""
   [{health_indicator}] {analysis['campaign_name']}
-      CTR: {metrics['ctr']:.2f}% | Conv Rate: {metrics['conversion_rate']:.2f}% |
-      Cost: ${metrics['cost']:,.2f} | ROAS: {metrics['roas']:.2f}x
+      Conversions: {metrics['conversions']:.0f} | Cost/Conv: ${metrics['cost_per_conversion']:.2f} |
+      Conv Rate: {metrics['conversion_rate']:.2f}% | Cost: ${metrics['cost']:,.2f}
 """
 
         summary += "\n========================================\n"
@@ -163,6 +166,7 @@ CAMPAIGN BREAKDOWN:
     def identify_optimization_opportunities(self, campaign_analysis):
         """
         Identify specific optimization opportunities
+        Focus: Lead Gen (maximize conversions, minimize cost per conversion)
 
         Returns: list of opportunity dicts
         """
@@ -170,44 +174,44 @@ CAMPAIGN BREAKDOWN:
         metrics = campaign_analysis['metrics']
         health = campaign_analysis['health_indicators']
 
-        # Low CTR opportunity
+        # High Cost Per Conversion (PRIMARY CONCERN FOR LEAD GEN)
+        if health['cost_efficiency_status'] in ['poor', 'warning']:
+            opportunities.append({
+                'type': 'reduce_cost_per_conversion',
+                'priority': 'critical' if health['cost_efficiency_status'] == 'poor' else 'high',
+                'description': f"Cost per conversion is ${metrics['cost_per_conversion']:.2f}. Optimize bids, improve quality scores, and add negative keywords to reduce wasted spend.",
+                'current_value': metrics['cost_per_conversion'],
+                'target_value': 40.0
+            })
+
+        # Low conversion rate (impacts total leads)
+        if health['conversion_rate_status'] in ['poor', 'warning']:
+            opportunities.append({
+                'type': 'improve_conversion_rate',
+                'priority': 'critical' if health['conversion_rate_status'] == 'poor' else 'high',
+                'description': f"Conversion rate is {metrics['conversion_rate']:.2f}%, below benchmark. Review landing pages, form friction, and keyword intent match.",
+                'current_value': metrics['conversion_rate'],
+                'target_value': 5.0
+            })
+
+        # Low CTR (reduces overall lead volume)
         if health['ctr_status'] in ['poor', 'warning']:
             opportunities.append({
                 'type': 'improve_ctr',
                 'priority': 'high' if health['ctr_status'] == 'poor' else 'medium',
-                'description': f"CTR is {metrics['ctr']:.2f}%, below benchmark. Consider testing new ad copy or improving targeting.",
+                'description': f"CTR is {metrics['ctr']:.2f}%, below benchmark. Test new ad copy with stronger value propositions and calls-to-action.",
                 'current_value': metrics['ctr'],
                 'target_value': 2.0
             })
 
-        # Low conversion rate opportunity
-        if health['conversion_rate_status'] in ['poor', 'warning']:
+        # Low conversion volume (not enough leads)
+        if metrics['conversions'] < 10:
             opportunities.append({
-                'type': 'improve_conversion_rate',
-                'priority': 'high' if health['conversion_rate_status'] == 'poor' else 'medium',
-                'description': f"Conversion rate is {metrics['conversion_rate']:.2f}%, below benchmark. Review landing pages and keyword relevance.",
-                'current_value': metrics['conversion_rate'],
-                'target_value': 2.0
-            })
-
-        # Poor ROAS opportunity
-        if health['roas_status'] in ['poor', 'warning']:
-            opportunities.append({
-                'type': 'improve_roas',
-                'priority': 'critical' if health['roas_status'] == 'poor' else 'high',
-                'description': f"ROAS is {metrics['roas']:.2f}x, below target. Consider bid adjustments and negative keywords.",
-                'current_value': metrics['roas'],
-                'target_value': 4.0
-            })
-
-        # High cost per conversion
-        if metrics['cost_per_conversion'] > 50:  # Arbitrary threshold
-            opportunities.append({
-                'type': 'reduce_cost_per_conversion',
-                'priority': 'medium',
-                'description': f"Cost per conversion is ${metrics['cost_per_conversion']:.2f}. Optimize bids and improve quality scores.",
-                'current_value': metrics['cost_per_conversion'],
-                'target_value': 30.0
+                'type': 'increase_conversion_volume',
+                'priority': 'high',
+                'description': f"Only {metrics['conversions']:.0f} conversions generated. Consider expanding keyword targeting and increasing bids for high-intent terms.",
+                'current_value': metrics['conversions'],
+                'target_value': 20.0
             })
 
         return opportunities

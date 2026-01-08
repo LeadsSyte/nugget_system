@@ -193,9 +193,13 @@ def main():
 
             if approval_file:
                 print(f"\n✓ Actions saved to: {approval_file}")
-                print(f"✓ Review summary: {approval_file.with_suffix('.txt')}")
-                print("\n📧 To approve actions, run:")
-                print(f"   python approve_actions.py {approval_file}")
+                print(f"✓ Text summary: {approval_file.with_suffix('.txt')}")
+                print(f"✓ HTML approval interface: {approval_file.with_suffix('.html')}")
+                print("\n📋 To review and approve actions:")
+                print(f"   1. Open in browser: {approval_file.with_suffix('.html')}")
+                print(f"   2. Click Approve/Reject buttons for each action")
+                print(f"   3. Click 'Download Decisions' button")
+                print(f"   4. Run: python apply_approvals.py <decisions_file.json>")
         elif all_actions:
             logger.info(f"{len(all_actions)} actions were executed automatically")
 
