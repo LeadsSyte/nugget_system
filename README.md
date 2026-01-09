@@ -49,11 +49,14 @@ The Nugget Personalization Agent tracks user behavior and personalizes the shopp
 - `CONFIGURATION.md` - Configuration and customization guide
 
 ### Hot Leathers Customization
-- `hotleathers-personalization.js` - Exit-intent with RIDE5 discount for hotleathers.com
+- `hotleathers-personalization.js` - Exit-intent with RIDE5 discount for 100% of users
+- `hotleathers-personalization-abtest.js` - A/B test version (50/50 split testing)
 - `thank-you-page-upsell.liquid` - Post-purchase upsell (Shopify Plus)
 - `post-purchase-upsell.jsx` - Advanced post-purchase extension (optional)
 - `HOTLEATHERS_INSTALLATION.md` - Complete Hot Leathers installation guide
 - `HOTLEATHERS_QUICK_REFERENCE.md` - Quick reference and troubleshooting
+- `ABTEST_GUIDE.md` - A/B testing guide for measuring conversion impact
+- `DOWNLOAD_INSTRUCTIONS.md` - How to download and access all files
 
 ## Hot Leathers Special Features
 
@@ -72,7 +75,15 @@ Custom implementation for hotleathers.com with:
 - Smart recommendations based on what customer purchased
 - Example: Bought jacket → Recommends gloves, helmet
 
-See `HOTLEATHERS_INSTALLATION.md` for complete setup instructions.
+### A/B Testing (Measure Impact)
+- Test version runs exit-intent for 50% of users
+- Control group (50%) sees normal experience
+- Automatically tracks conversions for both groups
+- Integrates with Google Analytics, Facebook Pixel, Shopify Analytics
+- Measure conversion rate lift before rolling out to 100%
+- Statistical analysis tools included
+
+See `HOTLEATHERS_INSTALLATION.md` for setup and `ABTEST_GUIDE.md` for A/B testing.
 
 ## What It Does
 
