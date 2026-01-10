@@ -105,14 +105,24 @@ class KeywordManager:
         return actions
 
     def _identify_negative_keywords(self, customer_id, campaign):
-        """Identify keywords that should be added as negatives"""
+        """Identify keywords that should be added as negatives based on actual search terms data"""
         actions = []
 
-        # This would ideally use search terms report data
-        # For now, we'll use a simplified approach
-        search_terms_data = []  # Would fetch from Google Ads API
+        # Fetch actual search terms data from Google Ads
+        search_terms_data = self.ads_manager.get_search_terms(customer_id, campaign['id'])
 
         if not search_terms_data:
+            self.logger.debug(f"No search terms data available for campaign: {campaign['name']}")
+            return actions
+
+        # Filter to terms with clicks but no conversions (wasted spend)
+        wasted_terms = [
+            term for term in search_terms_data
+            if term['clicks'] > 0 and term['conversions'] == 0 and term['cost'] > 0
+        ]
+
+        if not wasted_terms:
+            self.logger.debug(f"No wasted search terms found for campaign: {campaign['name']}")
             return actions
 
         # Get AI analysis

@@ -11,9 +11,11 @@ performance:
   # Days of historical data to analyze
   lookback_days: 30
 
-  # Minimum metrics for ad copy to be considered successful
-  min_impressions_for_analysis: 1000
-  min_clicks_for_analysis: 10
+  # Minimum metrics for analysis (LOWERED for smaller accounts)
+  # For keywords: analyze if they have at least this many impressions
+  min_impressions_for_analysis: 50
+  # For ad copy: analyze if they have at least this many clicks
+  min_clicks_for_analysis: 5
 
   # CTR improvement threshold (%)
   ctr_improvement_threshold: 10

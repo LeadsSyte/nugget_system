@@ -326,6 +326,46 @@ class GoogleAdsManager:
             self.logger.error(f"Error adding keyword: {ex}")
             return False
 
+    def get_search_terms(self, customer_id, campaign_id):
+        """Fetch search terms report for negative keyword analysis"""
+        try:
+            ga_service = self.client.get_service("GoogleAdsService")
+
+            query = f"""
+                SELECT
+                    search_term_view.search_term,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.conversions,
+                    metrics.cost_micros,
+                    ad_group.id,
+                    ad_group.name
+                FROM search_term_view
+                WHERE campaign.id = {campaign_id}
+                AND segments.date DURING LAST_30_DAYS
+                AND metrics.impressions > 0
+            """
+
+            response = ga_service.search(customer_id=customer_id, query=query)
+            search_terms = []
+
+            for row in response:
+                search_terms.append({
+                    'search_term': row.search_term_view.search_term,
+                    'impressions': row.metrics.impressions,
+                    'clicks': row.metrics.clicks,
+                    'conversions': row.metrics.conversions,
+                    'cost': row.metrics.cost_micros / 1_000_000,
+                    'ad_group_id': row.ad_group.id,
+                    'ad_group_name': row.ad_group.name
+                })
+
+            return search_terms
+
+        except GoogleAdsException as ex:
+            self.logger.error(f"Error fetching search terms: {ex}")
+            return []
+
     def add_negative_keyword(self, customer_id, campaign_id, keyword_text, match_type):
         """Add a negative keyword to a campaign"""
         try:
