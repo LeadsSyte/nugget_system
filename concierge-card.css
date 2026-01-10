@@ -1,0 +1,416 @@
+/**
+ * Revenue Recovery Listener - Concierge Card Styles
+ *
+ * NOTE: These styles are automatically injected by monitor.js
+ * This standalone file is provided for customization and theming
+ */
+
+/* ====================================
+   HIDE DEFAULT ZIPCHAT BUBBLE
+   ==================================== */
+
+/* Primary Zipchat selectors */
+#zipchat-widget,
+.zipchat-widget,
+[id*="zipchat-launcher"],
+[class*="zipchat-launcher"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Crisp-based Zipchat implementations */
+.crisp-client .cc-tlyw,
+.crisp-client .cc-kxkl {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* Generic chat widget launchers */
+.chat-launcher,
+.chat-widget-launcher,
+[data-widget-type="chat"],
+iframe[title*="chat" i],
+iframe[name*="chat" i] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Intercom fallback (if used) */
+#intercom-container .intercom-launcher,
+.intercom-lightweight-app-launcher {
+    display: none !important;
+}
+
+
+/* ====================================
+   CONCIERGE CARD - MAIN CONTAINER
+   ==================================== */
+
+.rrl-concierge-card {
+    /* Positioning */
+    position: fixed;
+    right: -400px; /* Start off-screen */
+    bottom: 24px;
+    z-index: 999999;
+
+    /* Sizing */
+    width: 360px;
+    max-width: calc(100vw - 32px);
+
+    /* Visual styling */
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 1px rgba(255, 255, 255, 0.1),
+        0 0 40px rgba(255, 215, 0, 0.1);
+
+    /* Typography */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+    /* Animation */
+    transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Prevent text selection during animation */
+    user-select: none;
+}
+
+/* Active state - slide in */
+.rrl-concierge-card.rrl-show {
+    right: 24px;
+    user-select: text;
+}
+
+/* Pulse animation on first appearance */
+@keyframes rrl-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+.rrl-concierge-card.rrl-show {
+    animation: rrl-pulse 0.6s ease-in-out 0.4s;
+}
+
+
+/* ====================================
+   CARD HEADER
+   ==================================== */
+
+.rrl-card-header {
+    display: flex;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 215, 0, 0.05);
+    border-radius: 16px 16px 0 0;
+}
+
+.rrl-concierge-icon {
+    color: #ffd700;
+    margin-right: 10px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+}
+
+.rrl-card-title {
+    color: #ffd700;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-grow: 1;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.rrl-close-btn {
+    /* Reset button styles */
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    /* Styling */
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+
+    /* Sizing */
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Animation */
+    transition: color 0.2s, transform 0.2s;
+}
+
+.rrl-close-btn:hover {
+    color: rgba(255, 255, 255, 1);
+    transform: rotate(90deg);
+}
+
+.rrl-close-btn:active {
+    transform: rotate(90deg) scale(0.9);
+}
+
+
+/* ====================================
+   CARD BODY
+   ==================================== */
+
+.rrl-card-body {
+    padding: 24px 20px;
+}
+
+.rrl-message {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 20px 0;
+}
+
+.rrl-message strong {
+    color: #ffd700;
+    font-weight: 600;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+
+
+/* ====================================
+   CTA BUTTON
+   ==================================== */
+
+.rrl-cta-btn {
+    /* Full width */
+    width: 100%;
+    display: block;
+
+    /* Reset button styles */
+    border: none;
+    margin: 0;
+
+    /* Styling */
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #1a1a2e;
+    border-radius: 8px;
+    padding: 14px 24px;
+
+    /* Typography */
+    font-size: 15px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    /* Interaction */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+}
+
+.rrl-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    background: linear-gradient(135deg, #ffed4e 0%, #ffd700 100%);
+}
+
+.rrl-cta-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(255, 215, 0, 0.4);
+}
+
+.rrl-cta-btn:focus {
+    outline: 2px solid #ffd700;
+    outline-offset: 2px;
+}
+
+
+/* ====================================
+   MOBILE RESPONSIVENESS
+   ==================================== */
+
+@media (max-width: 480px) {
+    .rrl-concierge-card {
+        right: -100%;
+        bottom: 16px;
+        width: calc(100vw - 32px);
+        border-radius: 12px;
+    }
+
+    .rrl-concierge-card.rrl-show {
+        right: 16px;
+    }
+
+    .rrl-card-header {
+        padding: 14px 16px;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .rrl-card-body {
+        padding: 20px 16px;
+    }
+
+    .rrl-message {
+        font-size: 14px;
+    }
+
+    .rrl-cta-btn {
+        font-size: 14px;
+        padding: 12px 20px;
+    }
+
+    .rrl-card-title {
+        font-size: 13px;
+    }
+}
+
+/* Ultra-small screens */
+@media (max-width: 360px) {
+    .rrl-concierge-card {
+        bottom: 12px;
+        width: calc(100vw - 24px);
+    }
+
+    .rrl-concierge-card.rrl-show {
+        right: 12px;
+    }
+}
+
+
+/* ====================================
+   THEME VARIATIONS
+   ==================================== */
+
+/* Blue variant (for sports betting sites) */
+.rrl-concierge-card.rrl-theme-blue {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    border-color: rgba(52, 152, 219, 0.3);
+}
+
+.rrl-theme-blue .rrl-concierge-icon,
+.rrl-theme-blue .rrl-card-title,
+.rrl-theme-blue .rrl-message strong {
+    color: #3498db;
+}
+
+.rrl-theme-blue .rrl-card-header {
+    background: rgba(52, 152, 219, 0.05);
+}
+
+.rrl-theme-blue .rrl-cta-btn {
+    background: linear-gradient(135deg, #3498db 0%, #5dade2 100%);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+}
+
+.rrl-theme-blue .rrl-cta-btn:hover {
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+}
+
+/* Red variant (for casino sites) */
+.rrl-concierge-card.rrl-theme-red {
+    background: linear-gradient(135deg, #2d0a0e 0%, #4a0e14 100%);
+    border-color: rgba(231, 76, 60, 0.3);
+}
+
+.rrl-theme-red .rrl-concierge-icon,
+.rrl-theme-red .rrl-card-title,
+.rrl-theme-red .rrl-message strong {
+    color: #e74c3c;
+}
+
+.rrl-theme-red .rrl-card-header {
+    background: rgba(231, 76, 60, 0.05);
+}
+
+.rrl-theme-red .rrl-cta-btn {
+    background: linear-gradient(135deg, #e74c3c 0%, #ec7063 100%);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
+.rrl-theme-red .rrl-cta-btn:hover {
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+}
+
+/* Purple variant (for premium/VIP sections) */
+.rrl-concierge-card.rrl-theme-purple {
+    background: linear-gradient(135deg, #1a0a2e 0%, #2d1b3d 100%);
+    border-color: rgba(155, 89, 182, 0.3);
+}
+
+.rrl-theme-purple .rrl-concierge-icon,
+.rrl-theme-purple .rrl-card-title,
+.rrl-theme-purple .rrl-message strong {
+    color: #9b59b6;
+}
+
+.rrl-theme-purple .rrl-card-header {
+    background: rgba(155, 89, 182, 0.05);
+}
+
+.rrl-theme-purple .rrl-cta-btn {
+    background: linear-gradient(135deg, #9b59b6 0%, #bb8fce 100%);
+    box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4);
+}
+
+.rrl-theme-purple .rrl-cta-btn:hover {
+    box-shadow: 0 6px 20px rgba(155, 89, 182, 0.6);
+}
+
+
+/* ====================================
+   ACCESSIBILITY
+   ==================================== */
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .rrl-concierge-card {
+        transition: none;
+    }
+
+    .rrl-concierge-card.rrl-show {
+        animation: none;
+    }
+
+    .rrl-close-btn,
+    .rrl-cta-btn {
+        transition: none;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .rrl-concierge-card {
+        border: 2px solid #ffd700;
+    }
+
+    .rrl-message {
+        color: #ffffff;
+    }
+
+    .rrl-cta-btn {
+        border: 2px solid #1a1a2e;
+    }
+}
+
+/* Dark mode override (if site uses dark mode) */
+@media (prefers-color-scheme: dark) {
+    /* Already dark by default, but can adjust if needed */
+}
+
+
+/* ====================================
+   PRINT STYLES
+   ==================================== */
+
+@media print {
+    .rrl-concierge-card {
+        display: none !important;
+    }
+}

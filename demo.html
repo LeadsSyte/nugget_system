@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revenue Recovery Listener - Demo</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .error-message {
+            display: none;
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        input.error {
+            border-color: #e74c3c !important;
+        }
+
+        .welcome-bonus {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 1rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            z-index: 999998;
+            max-width: 300px;
+        }
+
+        .demo-controls h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .demo-controls button {
+            width: 100%;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .demo-controls button:hover {
+            background: #5568d3;
+        }
+
+        .demo-controls .status {
+            font-size: 12px;
+            color: #666;
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid #eee;
+        }
+
+        /* Mock Zipchat bubble (will be hidden by RRL) */
+        .mock-zipchat-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 999997;
+            transition: transform 0.2s;
+        }
+
+        .mock-zipchat-bubble:hover {
+            transform: scale(1.1);
+        }
+
+        .mock-zipchat-bubble svg {
+            width: 30px;
+            height: 30px;
+            fill: white;
+        }
+
+        /* Mock Zipchat window */
+        .mock-zipchat-window {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            z-index: 999997;
+            flex-direction: column;
+        }
+
+        .mock-zipchat-window.open {
+            display: flex;
+        }
+
+        .zipchat-header {
+            background: #667eea;
+            color: white;
+            padding: 1rem;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .zipchat-body {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: #f5f5f5;
+        }
+
+        .zipchat-message {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+
+        .zipchat-message.system {
+            background: #fff3cd;
+            border-left: 3px solid #ffc107;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Demo Controls -->
+    <div class="demo-controls">
+        <h3>🧪 Test Controls</h3>
+        <button onclick="testDwellTrigger()">Test Dwell Trigger</button>
+        <button onclick="testErrorTrigger()">Test Error Trigger</button>
+        <button onclick="testExitTrigger()">Test Exit Trigger</button>
+        <button onclick="resetRRL()">Reset State</button>
+        <button onclick="toggleZipchat()">Toggle Zipchat Window</button>
+        <div class="status" id="status">
+            Ready to test...
+        </div>
+    </div>
+
+    <!-- Main Registration Form -->
+    <div class="form-container">
+        <div class="p-8">
+            <div class="welcome-bonus">
+                <h2 class="text-2xl font-bold mb-2">🎰 Welcome Bonus!</h2>
+                <p class="text-lg">100% Match up to $500 + 50 Free Spins</p>
+            </div>
+
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+            <p class="text-gray-600 mb-6">Join thousands of winners today</p>
+
+            <form name="registration" id="registration-form" class="space-y-4">
+                <!-- Email Field -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address *
+                    </label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        placeholder="you@example.com"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    <div class="error-message" id="email-error">
+                        Please enter a valid email address
+                    </div>
+                </div>
+
+                <!-- Username Field -->
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                        Username *
+                    </label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        required
+                        placeholder="Choose a username"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    <div class="error-message" id="username-error">
+                        Username must be at least 4 characters
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                        Password *
+                    </label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        required
+                        placeholder="Create a strong password"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    <div class="error-message" id="password-error">
+                        Password must be at least 8 characters with 1 number
+                    </div>
+                </div>
+
+                <!-- Date of Birth Field -->
+                <div>
+                    <label for="dob" class="block text-sm font-medium text-gray-700 mb-1">
+                        Date of Birth *
+                    </label>
+                    <input
+                        type="date"
+                        id="dob"
+                        name="dob"
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    <div class="error-message" id="dob-error">
+                        You must be 18 or older to register
+                    </div>
+                </div>
+
+                <!-- Phone Field -->
+                <div>
+                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                    </label>
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
+                        placeholder="+1 (555) 123-4567"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                    <div class="error-message" id="phone-error">
+                        Please enter a valid phone number
+                    </div>
+                </div>
+
+                <!-- Promo Code Field -->
+                <div>
+                    <label for="promo" class="block text-sm font-medium text-gray-700 mb-1">
+                        Promo Code (Optional)
+                    </label>
+                    <input
+                        type="text"
+                        id="promo"
+                        name="promo"
+                        placeholder="Enter promo code"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                    />
+                </div>
+
+                <!-- Terms Checkbox -->
+                <div class="flex items-start">
+                    <input
+                        type="checkbox"
+                        id="terms"
+                        name="terms"
+                        required
+                        class="mt-1 mr-2"
+                    />
+                    <label for="terms" class="text-sm text-gray-600">
+                        I agree to the Terms of Service and Privacy Policy and confirm I am 18+
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition shadow-lg"
+                >
+                    Claim My Bonus →
+                </button>
+            </form>
+
+            <p class="text-center text-gray-500 text-sm mt-6">
+                Already have an account? <a href="#" class="text-purple-600 font-semibold">Sign In</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- Mock Zipchat Widget -->
+    <div class="mock-zipchat-bubble" id="zipchat-launcher" onclick="toggleZipchat()">
+        <svg viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </div>
+
+    <div class="mock-zipchat-window" id="zipchat-window">
+        <div class="zipchat-header">
+            <span class="font-semibold">VIP Support Chat</span>
+            <button onclick="toggleZipchat()" class="text-white text-2xl">&times;</button>
+        </div>
+        <div class="zipchat-body" id="zipchat-messages">
+            <div class="zipchat-message">
+                Welcome! I'm here to help you claim your bonus. How can I assist you today?
+            </div>
+        </div>
+    </div>
+
+    <!-- Mock Zipchat API -->
+    <script>
+        // Simulate Zipchat API
+        window.ZipChat = {
+            open: function() {
+                console.log('[ZipChat] Opening chat...');
+                document.getElementById('zipchat-window').classList.add('open');
+                updateStatus('Zipchat opened via API');
+            },
+            close: function() {
+                console.log('[ZipChat] Closing chat...');
+                document.getElementById('zipchat-window').classList.remove('open');
+                updateStatus('Zipchat closed via API');
+            },
+            hide: function() {
+                console.log('[ZipChat] Hiding launcher...');
+                document.getElementById('zipchat-launcher').style.display = 'none';
+            },
+            show: function() {
+                console.log('[ZipChat] Showing launcher...');
+                document.getElementById('zipchat-launcher').style.display = 'flex';
+            },
+            setContext: function(context) {
+                console.log('[ZipChat] Context set:', context);
+                const msg = `<div class="zipchat-message system">
+                    [CONTEXT SET] stuck_field: ${context.stuck_field}, form_completion: ${context.form_completion}%
+                </div>`;
+                document.getElementById('zipchat-messages').innerHTML += msg;
+                updateStatus('Context injected: ' + context.stuck_field);
+            },
+            sendMessage: function(message) {
+                console.log('[ZipChat] Message sent:', message);
+                const msg = `<div class="zipchat-message system">${message}</div>`;
+                document.getElementById('zipchat-messages').innerHTML += msg;
+            },
+            setUserData: function(userData) {
+                console.log('[ZipChat] User data set:', userData);
+                updateStatus('User metadata set');
+            }
+        };
+
+        function toggleZipchat() {
+            const window = document.getElementById('zipchat-window');
+            window.classList.toggle('open');
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        // Test functions
+        function testDwellTrigger() {
+            updateStatus('Forcing dwell trigger...');
+            if (window.RevenueRecoveryListener) {
+                window.RevenueRecoveryListener.forceTestTrigger('dwell');
+            } else {
+                alert('RRL not loaded yet. Make sure monitor.js is included.');
+            }
+        }
+
+        function testErrorTrigger() {
+            updateStatus('Forcing error trigger...');
+            // Simulate an error
+            const emailInput = document.getElementById('email');
+            const emailError = document.getElementById('email-error');
+
+            emailInput.classList.add('error');
+            emailError.classList.add('show');
+
+            // Or use the test function
+            if (window.RevenueRecoveryListener) {
+                window.RevenueRecoveryListener.forceTestTrigger('error');
+            }
+        }
+
+        function testExitTrigger() {
+            updateStatus('Forcing exit intent trigger...');
+            if (window.RevenueRecoveryListener) {
+                window.RevenueRecoveryListener.forceTestTrigger('exit');
+            } else {
+                alert('RRL not loaded yet. Make sure monitor.js is included.');
+            }
+        }
+
+        function resetRRL() {
+            updateStatus('Resetting RRL state...');
+            if (window.RevenueRecoveryListener) {
+                window.RevenueRecoveryListener.resetState();
+                // Remove any existing concierge card
+                const card = document.getElementById('rrl-concierge-card');
+                if (card) card.remove();
+                // Clear errors
+                document.querySelectorAll('.error-message').forEach(el => el.classList.remove('show'));
+                document.querySelectorAll('input.error').forEach(el => el.classList.remove('error'));
+            }
+        }
+
+        // Form validation (to trigger errors)
+        document.getElementById('registration-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Form submitted! (Demo mode - not actually submitting)');
+        });
+
+        // Real-time validation
+        document.getElementById('email').addEventListener('blur', function() {
+            const email = this.value;
+            const error = document.getElementById('email-error');
+            if (email && !email.includes('@')) {
+                this.classList.add('error');
+                error.classList.add('show');
+            } else {
+                this.classList.remove('error');
+                error.classList.remove('show');
+            }
+        });
+
+        document.getElementById('username').addEventListener('blur', function() {
+            const username = this.value;
+            const error = document.getElementById('username-error');
+            if (username && username.length < 4) {
+                this.classList.add('error');
+                error.classList.add('show');
+            } else {
+                this.classList.remove('error');
+                error.classList.remove('show');
+            }
+        });
+
+        document.getElementById('password').addEventListener('blur', function() {
+            const password = this.value;
+            const error = document.getElementById('password-error');
+            if (password && (password.length < 8 || !/\d/.test(password))) {
+                this.classList.add('error');
+                error.classList.add('show');
+            } else {
+                this.classList.remove('error');
+                error.classList.remove('show');
+            }
+        });
+    </script>
+
+    <!-- Revenue Recovery Listener -->
+    <script src="monitor.js"></script>
+
+    <script>
+        // Wait a bit then log status
+        setTimeout(() => {
+            if (window.RevenueRecoveryListener) {
+                console.log('%c✅ Revenue Recovery Listener loaded successfully!', 'color: green; font-weight: bold; font-size: 14px;');
+                console.log('%cTry these commands:', 'color: blue; font-weight: bold;');
+                console.log('  window.RevenueRecoveryListener.forceTestTrigger("dwell")');
+                console.log('  window.RevenueRecoveryListener.forceTestTrigger("error")');
+                console.log('  window.RevenueRecoveryListener.forceTestTrigger("exit")');
+                console.log('  window.RevenueRecoveryListener.resetState()');
+                updateStatus('✅ RRL loaded and ready!');
+            } else {
+                console.error('❌ Revenue Recovery Listener failed to load');
+                updateStatus('❌ RRL failed to load');
+            }
+        }, 1000);
+    </script>
+
+</body>
+</html>
