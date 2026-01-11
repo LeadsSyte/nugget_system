@@ -101,12 +101,15 @@ def apply_approved_actions(approved_actions, config, logger):
         print(f"💰 Applying {len(actions_by_type['bid_adjustment'])} bid adjustments...")
         for action in actions_by_type['bid_adjustment']:
             try:
+                # Convert bid to micros (Google Ads uses micros: 1/1,000,000 of currency)
+                new_bid_micros = int(action['new_bid'] * 1_000_000)
+
                 # Apply bid adjustment through Google Ads API
                 google_ads.update_keyword_bid(
                     customer_id=customer_id,
                     ad_group_id=action['ad_group_id'],
-                    keyword_id=action.get('keyword_id'),
-                    new_bid=action['new_bid']
+                    criterion_id=action.get('keyword_id') or action.get('criterion_id'),
+                    new_bid_micros=new_bid_micros
                 )
                 print(f"  ✓ Updated bid for '{action['keyword']}' to ${action['new_bid']:.2f}")
                 success_count += 1
