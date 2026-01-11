@@ -91,7 +91,7 @@ def apply_approved_actions(approved_actions, config, logger):
         actions_by_type[action_type].append(action)
 
     # Apply each type of action
-    customer_id = config.get_google_ads_credentials()['login_customer_id']
+    customer_id = config.get_google_ads_credentials()['customer_id']
 
     success_count = 0
     error_count = 0
@@ -138,12 +138,15 @@ def apply_approved_actions(approved_actions, config, logger):
         print(f"\n🔑 Adding {len(actions_by_type['add_keyword'])} keywords...")
         for action in actions_by_type['add_keyword']:
             try:
+                # Convert bid to micros (Google Ads uses micros: 1/1,000,000 of currency)
+                bid_in_micros = int(action['recommended_bid'] * 1_000_000)
+
                 google_ads.add_keyword(
                     customer_id=customer_id,
                     ad_group_id=action['ad_group_id'],
                     keyword_text=action['keyword_text'],
                     match_type=action['match_type'],
-                    cpc_bid=action['recommended_bid']
+                    cpc_bid_micros=bid_in_micros
                 )
                 print(f"  ✓ Added keyword '{action['keyword_text']}' [{action['match_type']}]")
                 success_count += 1
