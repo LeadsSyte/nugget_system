@@ -26,6 +26,8 @@ class Config:
             'client_secret': os.getenv('GOOGLE_ADS_CLIENT_SECRET'),
             'refresh_token': os.getenv('GOOGLE_ADS_REFRESH_TOKEN'),
             'login_customer_id': os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID'),
+            # Customer ID to optimize (defaults to login_customer_id if not specified)
+            'customer_id': os.getenv('GOOGLE_ADS_CUSTOMER_ID') or os.getenv('GOOGLE_ADS_LOGIN_CUSTOMER_ID'),
         }
 
         self.gemini_api_key = os.getenv('GEMINI_API_KEY')

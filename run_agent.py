@@ -67,8 +67,8 @@ def main():
 
         logger.info("All components initialized successfully")
 
-        # Get customer ID
-        customer_id = config.get_google_ads_credentials()['login_customer_id']
+        # Get customer ID (the account to optimize)
+        customer_id = config.get_google_ads_credentials()['customer_id']
 
         # Fetch campaigns
         print("\n📊 Fetching campaign data...")
