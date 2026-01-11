@@ -1,0 +1,244 @@
+GOOGLE ADS API - DESIGN DOCUMENTATION
+======================================
+
+Company: Syte (https://syte.co.za)
+Contact: michaelh@syte.co.za
+Company Type: Digital Marketing Agency/SEM
+Date: January 2026
+
+
+1. PURPOSE
+----------
+AI-powered campaign optimization tool for managing client Google Ads accounts.
+Analyzes performance data and generates recommendations to improve ROI for
+lead generation campaigns. All changes require human approval.
+
+
+2. HOW IT WORKS
+---------------
+
+Step 1: DATA COLLECTION (Read-Only)
+   - Fetch campaign performance (impressions, clicks, conversions, cost)
+   - Fetch keyword performance (conversions, cost per lead, quality score)
+   - Fetch search terms report (identify wasted spend)
+   - Fetch ad performance metrics
+
+Step 2: AI ANALYSIS
+   - Google Gemini AI analyzes performance data
+   - Identifies optimization opportunities:
+     * Keywords with high cost per lead → suggest bid decreases
+     * Keywords with low cost per lead → suggest bid increases
+     * Search terms with clicks but no conversions → suggest as negatives
+     * Generate new ad copy variations for testing
+
+Step 3: HUMAN APPROVAL
+   - System generates HTML approval interface
+   - User reviews each recommendation
+   - User clicks "Approve" or "Reject" buttons
+   - NO AUTOMATIC CHANGES - 100% human-in-the-loop
+
+Step 4: IMPLEMENTATION
+   - Only approved recommendations are applied via Google Ads API
+   - Rejected recommendations are blacklisted (not suggested again)
+   - All actions logged for audit trail
+
+
+3. WHAT DATA WE ACCESS
+----------------------
+
+READ ACCESS (Required):
+✓ Campaign metrics (impressions, clicks, cost, conversions)
+✓ Keyword performance (conversions, cost per conversion, quality score)
+✓ Search terms report (user queries triggering ads)
+✓ Ad performance (headlines, descriptions, metrics)
+✓ Ad group data (bids, status, performance)
+
+WRITE ACCESS (Human Approved Only):
+✓ Update keyword bids
+✓ Create new ads
+✓ Add keywords
+✓ Add negative keywords
+
+WE DO NOT ACCESS:
+✗ Billing information
+✗ Personal user data
+✗ Competitor data
+✗ Accounts we don't manage
+
+
+4. BUSINESS USE CASE
+--------------------
+
+Who Uses It:
+- Digital marketing agencies managing multiple client accounts
+- Focus on lead generation campaigns (not ecommerce)
+
+Goals:
+- Reduce cost per lead (currently R266-R1,451 per lead for our clients)
+- Increase conversion volume
+- Eliminate wasted spend on non-converting search terms
+- Continuously test and improve ad copy
+
+Benefits:
+- Data-driven decisions based on actual performance
+- Scale management across multiple accounts
+- Maintain human oversight and control
+- Full transparency with audit logs
+
+
+5. WORKFLOW DIAGRAM
+-------------------
+
+    Google Ads API
+         ↓
+    Fetch Performance Data
+    (campaigns, keywords, search terms)
+         ↓
+    AI Analysis (Gemini)
+    - Identify high cost per lead keywords
+    - Identify wasted spend
+    - Generate recommendations
+         ↓
+    HTML Approval Interface
+    User sees recommendations with:
+    - Current performance
+    - Proposed change
+    - AI justification
+         ↓
+    User Clicks Approve/Reject
+         ↓
+    Apply Approved Changes Only
+    (via Google Ads API)
+         ↓
+    Generate Performance Reports
+
+
+6. SAFETY & COMPLIANCE
+----------------------
+
+Human Oversight:
+✓ All changes require explicit approval
+✓ NO automated changes without human review
+✓ Users can reject any recommendation
+✓ Rejected changes won't be suggested again
+
+Safety Limits:
+✓ Dry run mode available (logs without applying)
+✓ Maximum bid change: 20% per day
+✓ Minimum data threshold: 50 impressions before analysis
+✓ Maximum actions per campaign: 10 per day
+
+Data Security:
+✓ OAuth2 authentication
+✓ Data stored locally only
+✓ No data reselling
+✓ Full audit trail of all actions
+
+Policy Compliance:
+✓ Only manage authorized accounts
+✓ All recommendations comply with Google Ads policies
+✓ Transparent operations with full logging
+
+
+7. TYPICAL API USAGE
+--------------------
+
+Daily Read Operations (per account):
+- 3-10 campaigns fetched
+- 10-30 ad groups analyzed
+- 50-200 keywords analyzed
+- Last 30 days of search terms data
+Estimated: 50-200 API calls per account per day
+
+Write Operations (only if approved):
+- 0-20 bid updates per day
+- 0-5 new ads per day
+- 0-10 keywords added per day
+- 0-10 negative keywords per day
+ALL require human approval before execution
+
+
+8. EXAMPLE RECOMMENDATIONS
+--------------------------
+
+Example 1 - Bid Adjustment:
+"Keyword 'laundry service quote' has cost per lead of R180
+(below target of R250) with 5 conversions. Recommend increasing
+bid from R5.50 to R7.15 (+30%) to increase visibility while
+maintaining profitable cost per lead."
+
+Example 2 - Negative Keyword:
+"Search term 'free laundry service' received 15 clicks costing
+R225 with 0 conversions. Recommend adding as negative keyword
+to prevent wasted spend."
+
+Example 3 - Ad Copy:
+"Current ad has 2.3% CTR. New ad variation emphasizes 'Same Day
+Service' which testing suggests may improve CTR to 3.5%+ based
+on competitor analysis."
+
+
+9. WHY WE NEED STANDARD ACCESS
+------------------------------
+
+Basic Access Limitations:
+✗ Cannot access keyword-level performance data
+✗ Cannot access search terms report
+✗ Cannot see quality scores
+✗ Cannot see detailed metrics needed for optimization
+
+Standard Access Needed For:
+✓ Keyword performance analysis (conversions, cost per conversion)
+✓ Search terms report (identify negative keywords)
+✓ Quality score data (improve ad relevance)
+✓ Detailed criterion metrics (optimize bids effectively)
+
+Without Standard Access, we can only provide generic suggestions.
+With Standard Access, we can make data-driven recommendations based
+on actual client performance.
+
+
+10. RESPONSIBLE AI
+------------------
+
+AI Role: Advisory Only
+- AI generates recommendations
+- Humans make final decisions
+- Every recommendation includes justification
+- Users see exact changes before approval
+
+Transparency:
+- All AI decisions are explainable
+- Users see performance data behind each recommendation
+- Full audit trail of all actions
+- Rejected recommendations logged
+
+Learning:
+- System learns from user feedback
+- Rejected recommendations not re-suggested
+- Adapts to user preferences over time
+
+
+11. CONTACT INFORMATION
+-----------------------
+
+Developer: Syte Digital Marketing Agency
+Email: michaelh@syte.co.za
+Website: https://syte.co.za
+Location: South Africa
+
+Purpose: Campaign optimization and reporting for our client accounts
+
+For questions or clarifications about this integration, please contact
+the developer via the email above.
+
+
+====================================================================
+END OF DOCUMENTATION
+====================================================================
+
+This tool helps digital marketing agencies provide better results for
+their clients through data-driven optimization while maintaining full
+human oversight and control over all account changes.
+
+All operations comply with Google Ads API policies and terms of service.
