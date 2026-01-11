@@ -149,6 +149,7 @@ class GoogleAdsManager:
                     ad_group_ad.ad.type,
                     ad_group_ad.ad.responsive_search_ad.headlines,
                     ad_group_ad.ad.responsive_search_ad.descriptions,
+                    ad_group_ad.ad.final_urls,
                     ad_group_ad.status,
                     metrics.impressions,
                     metrics.clicks,
@@ -174,6 +175,10 @@ class GoogleAdsManager:
                     'conversions': row.metrics.conversions,
                     'cost': row.metrics.cost_micros / 1_000_000
                 }
+
+                # Extract final URLs if available
+                if row.ad_group_ad.ad.final_urls:
+                    ad_data['final_url'] = row.ad_group_ad.ad.final_urls[0]
 
                 # Extract RSA content if available
                 if row.ad_group_ad.ad.responsive_search_ad.headlines:
@@ -263,8 +268,53 @@ class GoogleAdsManager:
             self.logger.error(f"Error updating keyword bid: {ex}")
             return False
 
-    def create_responsive_search_ad(self, customer_id, ad_group_id, headlines, descriptions):
-        """Create a new responsive search ad"""
+    def create_responsive_search_ad(self, customer_id, ad_group_id, headlines, descriptions, final_url=None):
+        """Create a new responsive search ad
+
+        Args:
+            customer_id: Google Ads customer ID
+            ad_group_id: Ad group ID
+            headlines: List of headline strings (3-15 required, max 30 chars each)
+            descriptions: List of description strings (2-4 required, max 90 chars each)
+            final_url: Destination URL (if not provided, will fetch from existing ads)
+        """
+        # Get final URL from existing ads if not provided
+        if not final_url:
+            existing_ads = self.get_ads(customer_id, ad_group_id)
+            for ad in existing_ads:
+                if ad.get('final_url'):
+                    final_url = ad['final_url']
+                    break
+
+            if not final_url:
+                raise ValueError("No final URL provided and no existing ads found to copy URL from")
+
+        # Validate and truncate headlines (max 30 characters)
+        validated_headlines = []
+        for i, headline in enumerate(headlines[:15]):
+            if len(headline) > 30:
+                truncated = headline[:27] + "..."
+                self.logger.warning(f"Headline {i+1} truncated from {len(headline)} to 30 chars: '{headline}' -> '{truncated}'")
+                validated_headlines.append(truncated)
+            else:
+                validated_headlines.append(headline)
+
+        # Validate and truncate descriptions (max 90 characters)
+        validated_descriptions = []
+        for i, description in enumerate(descriptions[:4]):
+            if len(description) > 90:
+                truncated = description[:87] + "..."
+                self.logger.warning(f"Description {i+1} truncated from {len(description)} to 90 chars")
+                validated_descriptions.append(truncated)
+            else:
+                validated_descriptions.append(description)
+
+        # Ensure minimum requirements
+        if len(validated_headlines) < 3:
+            raise ValueError(f"Need at least 3 headlines, got {len(validated_headlines)}")
+        if len(validated_descriptions) < 2:
+            raise ValueError(f"Need at least 2 descriptions, got {len(validated_descriptions)}")
+
         try:
             ad_group_ad_service = self.client.get_service("AdGroupAdService")
             operation = self.client.get_type("AdGroupAdOperation")
@@ -276,31 +326,32 @@ class GoogleAdsManager:
             # Create responsive search ad
             rsa = ad_group_ad.ad.responsive_search_ad
 
-            # Add headlines (minimum 3, maximum 15)
-            for headline in headlines[:15]:
+            # Add headlines
+            for headline in validated_headlines:
                 headline_asset = self.client.get_type("AdTextAsset")
                 headline_asset.text = headline
                 rsa.headlines.append(headline_asset)
 
-            # Add descriptions (minimum 2, maximum 4)
-            for description in descriptions[:4]:
+            # Add descriptions
+            for description in validated_descriptions:
                 description_asset = self.client.get_type("AdTextAsset")
                 description_asset.text = description
                 rsa.descriptions.append(description_asset)
 
-            # Set final URL (you'll need to determine this from the ad group or campaign)
-            # ad_group_ad.ad.final_urls.append("https://example.com")
+            # Set final URL
+            ad_group_ad.ad.final_urls.append(final_url)
 
             response = ad_group_ad_service.mutate_ad_group_ads(
                 customer_id=customer_id,
                 operations=[operation]
             )
 
+            self.logger.info(f"Successfully created ad with {len(validated_headlines)} headlines and {len(validated_descriptions)} descriptions")
             return True
 
         except GoogleAdsException as ex:
             self.logger.error(f"Error creating ad: {ex}")
-            return False
+            raise
 
     def add_keyword(self, customer_id, ad_group_id, keyword_text, match_type, cpc_bid_micros):
         """Add a new keyword to an ad group"""
