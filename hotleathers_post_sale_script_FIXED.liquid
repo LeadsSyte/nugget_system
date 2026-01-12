@@ -1,0 +1,265 @@
+{% if first_time_accessed %}
+<style>
+  /* Hot Leathers Brand Identity */
+  :root {
+    --hl-red: #A42425;
+    --hl-black: #000000;
+    --hl-dark-grey: #1a1a1a;
+    --hl-text-grey: #cccccc;
+  }
+
+  .hl-thankyou-upsell {
+    background: var(--hl-black);
+    border: 3px solid var(--hl-red);
+    border-radius: 4px;
+    padding: 35px;
+    margin: 30px auto;
+    max-width: 650px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(164, 36, 37, 0.4);
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  .hl-thankyou-icon {
+    font-size: 52px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 0 10px var(--hl-red));
+    animation: hlRide 2s ease-in-out infinite;
+  }
+
+  @keyframes hlRide {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .hl-thankyou-title {
+    color: #fff;
+    font-size: 28px;
+    font-weight: 900;
+    margin: 0 0 10px;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hl-thankyou-subtitle {
+    color: var(--hl-red);
+    font-size: 20px;
+    margin: 0 0 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .hl-personalized-message {
+    color: var(--hl-text-grey);
+    font-size: 16px;
+    margin-bottom: 25px;
+    line-height: 1.5;
+  }
+
+  .hl-discount-box {
+    background: #0a0a0a;
+    border: 2px dashed var(--hl-red);
+    padding: 25px;
+    margin: 25px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hl-discount-label {
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  .hl-discount-code {
+    color: #fff;
+    font-size: 48px;
+    font-weight: 900;
+    margin: 10px 0;
+    letter-spacing: 5px;
+    text-shadow: 2px 2px 0px var(--hl-red);
+  }
+
+  .hl-discount-value {
+    color: var(--hl-red);
+    font-size: 22px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .hl-urgency {
+    color: #fff;
+    background: var(--hl-red);
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 13px;
+    margin-top: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .hl-shop-button {
+    background: var(--hl-red);
+    color: #fff;
+    border: none;
+    padding: 20px 45px;
+    font-size: 18px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 25px;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .hl-shop-button:hover {
+    background: #801c1d;
+    transform: scale(1.03);
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .hl-suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+  }
+
+  .hl-suggestion-item {
+    background: #151515;
+    padding: 15px;
+    border: 1px solid #333;
+    transition: all 0.3s;
+    text-decoration: none;
+    display: block;
+    color: #fff;
+  }
+
+  .hl-suggestion-item:hover {
+    border-color: var(--hl-red);
+    text-decoration: none;
+  }
+
+  .hl-suggestion-title {
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+
+  .hl-fine-print {
+    color: #666;
+    font-size: 11px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .hl-thankyou-upsell { padding: 25px 15px; }
+    .hl-discount-code { font-size: 36px; }
+    .hl-thankyou-title { font-size: 22px; }
+  }
+</style>
+
+<div class="hl-thankyou-upsell">
+  <div class="hl-thankyou-icon">💀</div>
+  <h2 class="hl-thankyou-title">Ride Hard. Save More.</h2>
+  <div class="hl-thankyou-subtitle">The ride doesn't end here</div>
+
+  <div class="hl-personalized-message">
+    <strong>Hey Rider</strong>, thanks for your order! Since you're gearing up, we want to help you finish the look.
+    <strong>Add any additional gear to your haul right now and take an extra 5% OFF!</strong>
+  </div>
+
+  <div class="hl-discount-box">
+    <div class="hl-discount-label">Enter code at checkout</div>
+    <div class="hl-discount-code">RIDE5</div>
+    <div class="hl-discount-value">5% OFF ENTIRE ORDER</div>
+    <div id="hl-timer" class="hl-urgency">Offer Expires In: 30:00</div>
+  </div>
+
+  <div class="hl-suggestions">
+    {% comment %}Add safety check for product type{% endcomment %}
+    {% assign first_type = '' %}
+    {% if order.line_items.first.product and order.line_items.first.product.type %}
+      {% assign first_type = order.line_items.first.product.type | downcase %}
+    {% endif %}
+
+    {% if first_type contains 'jacket' or first_type contains 'vest' %}
+      <a href="/collections/mens-leather-gloves?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">🧤 Grab Gloves</div>
+      </a>
+      <a href="/collections/mens-leather-chaps?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">👖 Add Chaps</div>
+      </a>
+    {% elsif first_type contains 'shirt' or first_type contains 'tee' %}
+      <a href="/collections/mens-leather-vests?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">🛡️ Leather Vests</div>
+      </a>
+      <a href="/collections/patches?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">🧵 Shop Patches</div>
+      </a>
+    {% else %}
+      <a href="/collections/mens-leather-jackets?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">🧥 Leather Jackets</div>
+      </a>
+      <a href="/collections/motorcycle-accessories?discount=RIDE5" class="hl-suggestion-item">
+        <div class="hl-suggestion-title">🧢 Accessories</div>
+      </a>
+    {% endif %}
+  </div>
+
+  <a href="/collections/all?discount=RIDE5" class="hl-shop-button">
+    Finish My Setup Now →
+  </a>
+
+  <p class="hl-fine-print">*RIDE5 valid for 30 minutes only. Cannot be combined with other offers.</p>
+</div>
+
+<script>
+  (function() {
+    // Wrap in try-catch to prevent errors from breaking the page
+    try {
+      var storageKey = 'hl_upsell_timer_{{ order.id }}';
+      var duration = 30 * 60;
+      var display = document.querySelector('#hl-timer');
+
+      if (!display) {
+        console.warn('Hot Leathers: Timer display element not found');
+        return;
+      }
+
+      // Check if timer already exists for this order
+      var savedTime = localStorage.getItem(storageKey);
+      var timer = savedTime ? parseInt(savedTime, 10) : duration;
+
+      var countdown = setInterval(function () {
+        var minutes = parseInt(timer / 60, 10);
+        var seconds = parseInt(timer % 60, 10);
+
+        minutes = minutes < 10 ? "0" + minutes : minutes;
+        seconds = seconds < 10 ? "0" + seconds : seconds;
+
+        display.textContent = "Offer Expires In: " + minutes + ":" + seconds;
+
+        if (--timer < 0) {
+          clearInterval(countdown);
+          display.textContent = "OFFER EXPIRED";
+          display.style.background = "#444";
+          localStorage.removeItem(storageKey);
+        } else {
+          localStorage.setItem(storageKey, timer);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Hot Leathers upsell script error:', error);
+    }
+  })();
+</script>
+{% endif %}
