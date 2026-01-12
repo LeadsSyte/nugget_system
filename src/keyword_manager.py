@@ -92,14 +92,6 @@ class KeywordManager:
                 'status': 'awaiting_approval'
             }
 
-            # Apply if auto_add is enabled
-            if self.auto_add_keywords and not self.config.is_dry_run():
-                self.logger.info(
-                    f"Would add keyword '{keyword_text}' ({match_type}) "
-                    f"to '{ad_group['name']}' with bid ${recommended_bid:.2f}"
-                )
-                action['status'] = 'pending_implementation'
-
             actions.append(action)
 
         return actions
@@ -152,14 +144,6 @@ class KeywordManager:
                 'expected_savings': analysis.get('expected_savings', ''),
                 'status': 'awaiting_approval'
             }
-
-            # Apply if auto_add_negatives is enabled
-            if self.auto_add_negatives and not self.config.is_dry_run():
-                self.logger.info(
-                    f"Would add negative keyword '{negative.get('text')}' "
-                    f"to campaign '{campaign['name']}'"
-                )
-                action['status'] = 'pending_implementation'
 
             actions.append(action)
 

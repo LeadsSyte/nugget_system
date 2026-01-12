@@ -131,15 +131,6 @@ class AdCopyManager:
             'status': 'awaiting_approval'
         }
 
-        # Apply if auto_create is enabled
-        if self.auto_create and not self.config.is_dry_run():
-            # Would create the ad here
-            self.logger.info(
-                f"Would create new ad for '{ad_group['name']}' with "
-                f"{len(new_ads['headlines'])} headlines and {len(new_ads['descriptions'])} descriptions"
-            )
-            action['status'] = 'pending_implementation'
-
         actions.append(action)
 
         return actions
