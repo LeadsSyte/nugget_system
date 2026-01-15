@@ -28,7 +28,7 @@
           "cachedResultName": "Google Ads Optimizer Config"
         },
         "options": {
-          "range": "A:E"
+          "range": "A:F"
         }
       },
       "id": "read-client-config",
