@@ -79,7 +79,7 @@
             {
               "id": "campaign_ids",
               "name": "campaign_ids",
-              "value": "={{ ($json.campaign_ids || $json['Campaign IDs']).split(',').map(id => id.trim()) }}",
+              "value": "={{ ($json.campaign_ids || $json['Campaign IDs'] || $json['Camaign IDs']).split(',').map(id => id.trim()) }}",
               "type": "array"
             }
           ]
