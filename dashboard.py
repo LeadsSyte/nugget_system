@@ -28,7 +28,8 @@ def get_available_accounts():
 
     # Look for .env.client_* files
     for env_file in Path('.').glob('.env.client_*'):
-        account_id = env_file.stem.replace('.env.client_', '')
+        # Use the full name, not stem (since files start with dot)
+        account_id = env_file.name.replace('.env.client_', '')
 
         # Read the file to get account details
         with open(env_file, 'r') as f:
