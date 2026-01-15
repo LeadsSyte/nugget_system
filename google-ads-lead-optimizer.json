@@ -7,7 +7,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -32,7 +35,10 @@
       "name": "Read Client Config",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [460, 300],
+      "position": [
+        460,
+        300
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "GOOGLE_SHEETS_CREDENTIAL_ID",
@@ -49,7 +55,10 @@
       "name": "Loop Over Clients",
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -84,6 +93,12 @@
               "name": "campaign_ids",
               "value": "={{ ($json.campaign_ids || $json['Campaign IDs'] || $json['Camaign IDs']).split(',').map(id => id.trim()) }}",
               "type": "array"
+            },
+            {
+              "id": "manager_id",
+              "name": "manager_id",
+              "value": "={{ ($json.manager_id || $json['Manager ID'] || $json['Manager Account ID'] || '').replace(/-/g, '') }}",
+              "type": "string"
             }
           ]
         },
@@ -93,7 +108,10 @@
       "name": "Normalize Client Data",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.3,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -103,7 +121,10 @@
       "name": "Prepare Google Ads Queries",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     },
     {
       "parameters": {
@@ -111,6 +132,15 @@
         "url": "=https://googleads.googleapis.com/v16/customers/{{ $json.account_id.replace(/-/g, '') }}/googleAds:searchStream",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -132,7 +162,10 @@
       "name": "Fetch Campaign Data",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 180],
+      "position": [
+        1340,
+        180
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "GOOGLE_ADS_CREDENTIAL_ID",
@@ -146,6 +179,15 @@
         "url": "=https://googleads.googleapis.com/v16/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:searchStream",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -167,7 +209,10 @@
       "name": "Fetch Keyword Data",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 300],
+      "position": [
+        1340,
+        300
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "GOOGLE_ADS_CREDENTIAL_ID",
@@ -181,6 +226,15 @@
         "url": "=https://googleads.googleapis.com/v16/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:searchStream",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -202,7 +256,10 @@
       "name": "Fetch Ad Data",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 420],
+      "position": [
+        1340,
+        420
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "GOOGLE_ADS_CREDENTIAL_ID",
@@ -216,6 +273,15 @@
         "url": "=https://googleads.googleapis.com/v16/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:searchStream",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "bodyParameters": {
           "parameters": [
@@ -237,7 +303,10 @@
       "name": "Fetch Search Terms",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1340, 540],
+      "position": [
+        1340,
+        540
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "GOOGLE_ADS_CREDENTIAL_ID",
@@ -254,17 +323,23 @@
       "name": "Merge Google Ads Data",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 2.1,
-      "position": [1560, 300]
+      "position": [
+        1560,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Combine all Google Ads data and prepare for Claude analysis\nconst clientData = $('Prepare Google Ads Queries').item.json;\nconst campaignData = $input.all()[0].json;\nconst keywordData = $input.all()[1].json;\nconst adData = $input.all()[2].json;\nconst searchTermsData = $input.all()[3].json;\n\n// Helper function to convert micros to currency\nconst microsToCurrency = (micros) => {\n  return micros ? (micros / 1000000).toFixed(2) : '0.00';\n};\n\n// Process campaign data\nconst campaigns = (campaignData.results || []).map(result => ({\n  id: result.campaign?.id,\n  name: result.campaign?.name,\n  status: result.campaign?.status,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  avg_cpc: microsToCurrency(result.metrics?.averageCpc),\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process keyword data\nconst keywords = (keywordData.results || []).map(result => ({\n  campaign_name: result.campaign?.name,\n  ad_group_name: result.adGroup?.name,\n  keyword: result.adGroupCriterion?.keyword?.text,\n  match_type: result.adGroupCriterion?.keyword?.matchType,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process ad data\nconst ads = (adData.results || []).map(result => ({\n  campaign_name: result.campaign?.name,\n  ad_group_name: result.adGroup?.name,\n  ad_id: result.adGroupAd?.ad?.id,\n  ad_type: result.adGroupAd?.ad?.type,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process search terms for wasted spend analysis\nconst searchTerms = (searchTermsData.results || []).map(result => ({\n  search_term: result.searchTermView?.searchTerm,\n  match_type: result.segments?.searchTermMatchType,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%'\n}));\n\n// Calculate totals\nconst totals = campaigns.reduce((acc, camp) => {\n  acc.total_impressions += camp.impressions;\n  acc.total_clicks += camp.clicks;\n  acc.total_conversions += camp.conversions;\n  acc.total_cost += parseFloat(camp.cost);\n  return acc;\n}, {\n  total_impressions: 0,\n  total_clicks: 0,\n  total_conversions: 0,\n  total_cost: 0\n});\n\ntotals.average_cpl = totals.total_conversions > 0 \n  ? (totals.total_cost / totals.total_conversions).toFixed(2) \n  : 'N/A';\n\n// Identify wasted spend (high cost, zero conversions)\nconst wastedSpend = keywords\n  .filter(kw => parseFloat(kw.cost) > 10 && kw.conversions === 0)\n  .sort((a, b) => parseFloat(b.cost) - parseFloat(a.cost))\n  .slice(0, 20);\n\nconst performanceData = {\n  account_info: {\n    account_id: clientData.account_id,\n    account_name: clientData.account_name,\n    target_cpl: clientData.target_cpl,\n    weekly_budget: clientData.weekly_budget,\n    date_range: `${clientData.date_range.start} to ${clientData.date_range.end}`\n  },\n  summary: totals,\n  campaigns: campaigns,\n  keywords: keywords.slice(0, 50), // Top 50 by cost\n  ads: ads.slice(0, 30), // Top 30 by cost\n  search_terms: searchTerms.slice(0, 50), // Top 50 by cost\n  wasted_spend_keywords: wastedSpend\n};\n\nreturn {\n  json: {\n    account_id: clientData.account_id,\n    account_name: clientData.account_name,\n    target_cpl: clientData.target_cpl,\n    weekly_budget: clientData.weekly_budget,\n    performance_data: performanceData\n  }\n};"
+        "jsCode": "// Combine all Google Ads data and prepare for Claude analysis\nconst clientData = $('Prepare Google Ads Queries').item.json;\nconst campaignData = $input.all()[0].json;\nconst keywordData = $input.all()[1].json;\nconst adData = $input.all()[2].json;\nconst searchTermsData = $input.all()[3].json;\n\n// Helper function to convert micros to currency\nconst microsToCurrency = (micros) => {\n  return micros ? (micros / 1000000).toFixed(2) : '0.00';\n};\n\n// Process campaign data\nconst campaigns = (campaignData.results || []).map(result => ({\n  id: result.campaign?.id,\n  name: result.campaign?.name,\n  status: result.campaign?.status,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  avg_cpc: microsToCurrency(result.metrics?.averageCpc),\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process keyword data\nconst keywords = (keywordData.results || []).map(result => ({\n  campaign_name: result.campaign?.name,\n  ad_group_name: result.adGroup?.name,\n  keyword: result.adGroupCriterion?.keyword?.text,\n  match_type: result.adGroupCriterion?.keyword?.matchType,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process ad data\nconst ads = (adData.results || []).map(result => ({\n  campaign_name: result.campaign?.name,\n  ad_group_name: result.adGroup?.name,\n  ad_id: result.adGroupAd?.ad?.id,\n  ad_type: result.adGroupAd?.ad?.type,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%',\n  cost_per_conversion: microsToCurrency(result.metrics?.costPerConversion)\n}));\n\n// Process search terms for wasted spend analysis\nconst searchTerms = (searchTermsData.results || []).map(result => ({\n  search_term: result.searchTermView?.searchTerm,\n  match_type: result.segments?.searchTermMatchType,\n  impressions: result.metrics?.impressions || 0,\n  clicks: result.metrics?.clicks || 0,\n  conversions: result.metrics?.conversions || 0,\n  cost: microsToCurrency(result.metrics?.costMicros),\n  ctr: result.metrics?.ctr ? (result.metrics.ctr * 100).toFixed(2) + '%' : '0%'\n}));\n\n// Calculate totals\nconst totals = campaigns.reduce((acc, camp) => {\n  acc.total_impressions += camp.impressions;\n  acc.total_clicks += camp.clicks;\n  acc.total_conversions += camp.conversions;\n  acc.total_cost += parseFloat(camp.cost);\n  return acc;\n}, {\n  total_impressions: 0,\n  total_clicks: 0,\n  total_conversions: 0,\n  total_cost: 0\n});\n\ntotals.average_cpl = totals.total_conversions > 0 \n  ? (totals.total_cost / totals.total_conversions).toFixed(2) \n  : 'N/A';\n\n// Identify wasted spend (high cost, zero conversions)\nconst wastedSpend = keywords\n  .filter(kw => parseFloat(kw.cost) > 10 && kw.conversions === 0)\n  .sort((a, b) => parseFloat(b.cost) - parseFloat(a.cost))\n  .slice(0, 20);\n\nconst performanceData = {\n  account_info: {\n    account_id: clientData.account_id,\n    account_name: clientData.account_name,\n    target_cpl: clientData.target_cpl,\n    weekly_budget: clientData.weekly_budget,\n    manager_id: clientData.manager_id,\n    date_range: `${clientData.date_range.start} to ${clientData.date_range.end}`\n  },\n  summary: totals,\n  campaigns: campaigns,\n  keywords: keywords.slice(0, 50), // Top 50 by cost\n  ads: ads.slice(0, 30), // Top 30 by cost\n  search_terms: searchTerms.slice(0, 50), // Top 50 by cost\n  wasted_spend_keywords: wastedSpend\n};\n\nreturn {\n  json: {\n    account_id: clientData.account_id,\n    account_name: clientData.account_name,\n    target_cpl: clientData.target_cpl,\n    weekly_budget: clientData.weekly_budget,\n    manager_id: clientData.manager_id,\n    performance_data: performanceData\n  }\n};"
       },
       "id": "prepare-claude-data",
       "name": "Prepare Data for Claude",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1780, 300]
+      "position": [
+        1780,
+        300
+      ]
     },
     {
       "parameters": {
@@ -298,7 +373,10 @@
       "name": "Claude AI Analysis",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2000, 300],
+      "position": [
+        2000,
+        300
+      ],
       "credentials": {
         "anthropicApi": {
           "id": "CLAUDE_API_CREDENTIAL_ID",
@@ -308,13 +386,16 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse Claude's response and prepare email content\nconst accountName = $('Prepare Data for Claude').item.json.account_name;\nconst performanceData = $('Prepare Data for Claude').item.json.performance_data;\nconst claudeResponse = $input.item.json;\n\n// Extract the JSON from Claude's response\nlet recommendations;\ntry {\n  // Claude's response is in content[0].text\n  const responseText = claudeResponse.content[0].text;\n  // Try to parse JSON from the response\n  const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    recommendations = JSON.parse(jsonMatch[0]);\n  } else {\n    // Fallback if no JSON found\n    recommendations = {\n      high_confidence_changes: [],\n      review_required: [],\n      insights: responseText\n    };\n  }\n} catch (error) {\n  recommendations = {\n    high_confidence_changes: [],\n    review_required: [],\n    insights: 'Error parsing Claude response: ' + error.message\n  };\n}\n\n// Format high confidence changes for email\nconst formatHighConfidence = (changes) => {\n  if (!changes || changes.length === 0) return 'None identified';\n  \n  return changes.map((change, idx) => {\n    return `${idx + 1}. [${change.type.toUpperCase()}] ${change.entity_name || 'N/A'}\n   Reason: ${change.reason}\n   Expected Impact: ${change.expected_impact}`;\n  }).join('\\n\\n');\n};\n\n// Format review required items for email\nconst formatReviewRequired = (items) => {\n  if (!items || items.length === 0) return 'None at this time';\n  \n  return items.map((item, idx) => {\n    return `${idx + 1}. [${item.type.toUpperCase()}]\n   Recommendation: ${item.recommendation}\n   Reason: ${item.reason}\n   Estimated Impact: ${item.estimated_impact}`;\n  }).join('\\n\\n');\n};\n\n// Create email body\nconst emailSubject = `Google Ads Optimization Report - ${accountName}`;\nconst emailBody = `\nGoogle Ads Lead Optimizer - Weekly Report\n==========================================\n\nAccount: ${accountName}\nPeriod: ${performanceData.account_info.date_range}\n\n📊 PERFORMANCE SUMMARY\n----------------------\nTotal Impressions: ${performanceData.summary.total_impressions.toLocaleString()}\nTotal Clicks: ${performanceData.summary.total_clicks.toLocaleString()}\nTotal Conversions: ${performanceData.summary.total_conversions}\nTotal Cost: $${performanceData.summary.total_cost.toFixed(2)}\nActual CPL: $${performanceData.summary.average_cpl}\nTarget CPL: $${performanceData.account_info.target_cpl}\n\n🎯 KEY INSIGHTS\n---------------\n${recommendations.insights}\n\n✅ HIGH CONFIDENCE CHANGES (Auto-Apply Ready)\n--------------------------------------------\n${formatHighConfidence(recommendations.high_confidence_changes)}\n\n⚠️  CHANGES REQUIRING YOUR REVIEW\n---------------------------------\n${formatReviewRequired(recommendations.review_required)}\n\n🔗 NEXT STEPS\n-------------\n1. Review the high confidence changes above\n2. Click the approval link to confirm or reject changes\n3. Review strategic recommendations that require your decision\n\n[APPROVAL LINK PLACEHOLDER - Will be webhook in next version]\n\n---\nThis report was generated automatically by the Google Ads Lead Optimizer.\nQuestions? Reply to this email.\n`;\n\nreturn {\n  json: {\n    account_name: accountName,\n    account_id: $('Prepare Data for Claude').item.json.account_id,\n    email_subject: emailSubject,\n    email_body: emailBody,\n    recommendations: recommendations,\n    performance_summary: performanceData.summary\n  }\n};"
+        "jsCode": "// Parse Claude's response and prepare email content\nconst accountName = $('Prepare Data for Claude').item.json.account_name;\nconst performanceData = $('Prepare Data for Claude').item.json.performance_data;\nconst claudeResponse = $input.item.json;\n\n// Extract the JSON from Claude's response\nlet recommendations;\ntry {\n  // Claude's response is in content[0].text\n  const responseText = claudeResponse.content[0].text;\n  // Try to parse JSON from the response\n  const jsonMatch = responseText.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    recommendations = JSON.parse(jsonMatch[0]);\n  } else {\n    // Fallback if no JSON found\n    recommendations = {\n      high_confidence_changes: [],\n      review_required: [],\n      insights: responseText\n    };\n  }\n} catch (error) {\n  recommendations = {\n    high_confidence_changes: [],\n    review_required: [],\n    insights: 'Error parsing Claude response: ' + error.message\n  };\n}\n\n// Format high confidence changes for email\nconst formatHighConfidence = (changes) => {\n  if (!changes || changes.length === 0) return 'None identified';\n  \n  return changes.map((change, idx) => {\n    return `${idx + 1}. [${change.type.toUpperCase()}] ${change.entity_name || 'N/A'}\n   Reason: ${change.reason}\n   Expected Impact: ${change.expected_impact}`;\n  }).join('\\n\\n');\n};\n\n// Format review required items for email\nconst formatReviewRequired = (items) => {\n  if (!items || items.length === 0) return 'None at this time';\n  \n  return items.map((item, idx) => {\n    return `${idx + 1}. [${item.type.toUpperCase()}]\n   Recommendation: ${item.recommendation}\n   Reason: ${item.reason}\n   Estimated Impact: ${item.estimated_impact}`;\n  }).join('\\n\\n');\n};\n\n// Create email body\nconst emailSubject = `Google Ads Optimization Report - ${accountName}`;\nconst emailBody = `\nGoogle Ads Lead Optimizer - Weekly Report\n==========================================\n\nAccount: ${accountName}\nPeriod: ${performanceData.account_info.date_range}\n\n\ud83d\udcca PERFORMANCE SUMMARY\n----------------------\nTotal Impressions: ${performanceData.summary.total_impressions.toLocaleString()}\nTotal Clicks: ${performanceData.summary.total_clicks.toLocaleString()}\nTotal Conversions: ${performanceData.summary.total_conversions}\nTotal Cost: $${performanceData.summary.total_cost.toFixed(2)}\nActual CPL: $${performanceData.summary.average_cpl}\nTarget CPL: $${performanceData.account_info.target_cpl}\n\n\ud83c\udfaf KEY INSIGHTS\n---------------\n${recommendations.insights}\n\n\u2705 HIGH CONFIDENCE CHANGES (Auto-Apply Ready)\n--------------------------------------------\n${formatHighConfidence(recommendations.high_confidence_changes)}\n\n\u26a0\ufe0f  CHANGES REQUIRING YOUR REVIEW\n---------------------------------\n${formatReviewRequired(recommendations.review_required)}\n\n\ud83d\udd17 NEXT STEPS\n-------------\n1. Review the high confidence changes above\n2. Click the approval link to confirm or reject changes\n3. Review strategic recommendations that require your decision\n\n[APPROVAL LINK PLACEHOLDER - Will be webhook in next version]\n\n---\nThis report was generated automatically by the Google Ads Lead Optimizer.\nQuestions? Reply to this email.\n`;\n\nreturn {\n  json: {\n    account_name: accountName,\n    account_id: $('Prepare Data for Claude').item.json.account_id,\n    email_subject: emailSubject,\n    email_body: emailBody,\n    recommendations: recommendations,\n    performance_summary: performanceData.summary\n  }\n};"
       },
       "id": "format-email",
       "name": "Format Email Report",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2220, 300]
+      "position": [
+        2220,
+        300
+      ]
     },
     {
       "parameters": {
@@ -329,7 +410,10 @@
       "name": "Send Email Report",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
-      "position": [2440, 300],
+      "position": [
+        2440,
+        300
+      ],
       "credentials": {
         "smtp": {
           "id": "EMAIL_SMTP_CREDENTIAL_ID",
@@ -346,18 +430,24 @@
       "name": "Wait for Approval",
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
-      "position": [2660, 300],
+      "position": [
+        2660,
+        300
+      ],
       "webhookId": "approval-webhook"
     },
     {
       "parameters": {
-        "jsCode": "// Prepare Google Ads API mutations to apply approved changes\n// For now, we'll prepare the changes but won't apply them automatically\n// This can be extended based on approval webhook response\n\nconst accountId = $('Format Email Report').item.json.account_id;\nconst recommendations = $('Format Email Report').item.json.recommendations;\n\n// Only process high confidence changes\nconst changesToApply = recommendations.high_confidence_changes || [];\n\nconst mutations = [];\n\nchangesToApply.forEach(change => {\n  switch(change.type) {\n    case 'pause_keyword':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_criterion',\n        resourceName: change.entity_id,\n        update: {\n          status: 'PAUSED'\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'adjust_bid':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_criterion',\n        resourceName: change.entity_id,\n        update: {\n          cpc_bid_micros: change.action_details.new_bid_micros\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'add_negative':\n      mutations.push({\n        operation: 'CREATE',\n        entity: 'campaign_criterion',\n        create: {\n          campaign: change.action_details.campaign_resource_name,\n          keyword: {\n            text: change.action_details.keyword_text,\n            match_type: 'EXACT'\n          },\n          negative: true\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'pause_ad':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_ad',\n        resourceName: change.entity_id,\n        update: {\n          status: 'PAUSED'\n        },\n        change_details: change\n      });\n      break;\n  }\n});\n\nreturn {\n  json: {\n    account_id: accountId,\n    account_name: $('Format Email Report').item.json.account_name,\n    mutations: mutations,\n    total_changes: mutations.length\n  }\n};"
+        "jsCode": "// Prepare Google Ads API mutations to apply approved changes\n// For now, we'll prepare the changes but won't apply them automatically\n// This can be extended based on approval webhook response\n\nconst accountId = $('Format Email Report').item.json.account_id;\nconst recommendations = $('Format Email Report').item.json.recommendations;\n\n// Only process high confidence changes\nconst changesToApply = recommendations.high_confidence_changes || [];\n\nconst mutations = [];\n\nchangesToApply.forEach(change => {\n  switch(change.type) {\n    case 'pause_keyword':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_criterion',\n        resourceName: change.entity_id,\n        update: {\n          status: 'PAUSED'\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'adjust_bid':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_criterion',\n        resourceName: change.entity_id,\n        update: {\n          cpc_bid_micros: change.action_details.new_bid_micros\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'add_negative':\n      mutations.push({\n        operation: 'CREATE',\n        entity: 'campaign_criterion',\n        create: {\n          campaign: change.action_details.campaign_resource_name,\n          keyword: {\n            text: change.action_details.keyword_text,\n            match_type: 'EXACT'\n          },\n          negative: true\n        },\n        change_details: change\n      });\n      break;\n      \n    case 'pause_ad':\n      mutations.push({\n        operation: 'UPDATE',\n        entity: 'ad_group_ad',\n        resourceName: change.entity_id,\n        update: {\n          status: 'PAUSED'\n        },\n        change_details: change\n      });\n      break;\n  }\n});\n\nreturn {\n  json: {\n    account_id: accountId,\n    account_name: $('Format Email Report').item.json.account_name,\n    manager_id: $('Format Email Report').item.json.manager_id,\n    mutations: mutations,\n    total_changes: mutations.length\n  }\n};"
       },
       "id": "prepare-mutations",
       "name": "Prepare Change Mutations",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2880, 300]
+      "position": [
+        2880,
+        300
+      ]
     },
     {
       "parameters": {
@@ -365,6 +455,15 @@
         "url": "=https://googleads.googleapis.com/v16/customers/{{ $json.account_id.replace(/-/g, '') }}/googleAds:mutate",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"mutateOperations\": {{ JSON.stringify($json.mutations.map(m => ({\n    [m.entity + '_operation']: {\n      [m.operation.toLowerCase()]: m.operation === 'UPDATE' ? {\n        resourceName: m.resourceName,\n        ...m.update\n      } : m.create\n    }\n  }))) }}\n}",
@@ -380,7 +479,10 @@
       "name": "Apply Changes to Google Ads",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3100, 300],
+      "position": [
+        3100,
+        300
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "GOOGLE_ADS_CREDENTIAL_ID",
@@ -396,7 +498,10 @@
       "name": "Prepare Log Entries",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3320, 300]
+      "position": [
+        3320,
+        300
+      ]
     },
     {
       "parameters": {
@@ -498,7 +603,10 @@
       "name": "Log Changes to Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [3540, 300],
+      "position": [
+        3540,
+        300
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "GOOGLE_SHEETS_CREDENTIAL_ID",
@@ -512,7 +620,10 @@
       "name": "Loop Back to Next Client",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [3760, 300]
+      "position": [
+        3760,
+        300
+      ]
     }
   ],
   "connections": {
