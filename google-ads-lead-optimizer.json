@@ -41,7 +41,10 @@
       }
     },
     {
-      "parameters": {},
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
       "id": "loop-over-clients",
       "name": "Loop Over Clients",
       "type": "n8n-nodes-base.splitInBatches",
@@ -743,7 +746,7 @@
           {
             "node": "Loop Over Clients",
             "type": "main",
-            "index": 0
+            "index": 1
           }
         ]
       ]
