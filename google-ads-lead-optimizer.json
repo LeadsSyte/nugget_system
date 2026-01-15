@@ -399,7 +399,8 @@
       "parameters": {
         "operation": "append",
         "sheetId": {
-          "__rl": true,\n          "value": "change-log",
+          "__rl": true,
+          "value": "change-log",
           "mode": "list",
           "cachedResultName": "Change Log"
         },
