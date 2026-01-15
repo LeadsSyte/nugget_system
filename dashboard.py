@@ -34,22 +34,34 @@ def get_available_accounts():
         with open(env_file, 'r') as f:
             content = f.read()
             customer_id = None
+            account_name = None
+
             for line in content.split('\n'):
                 if line.startswith('GOOGLE_ADS_CUSTOMER_ID='):
                     customer_id = line.split('=')[1].strip()
-                    break
+                elif line.startswith('ACCOUNT_NAME='):
+                    account_name = line.split('=', 1)[1].strip()
 
         if customer_id:
             # Format with dashes for display
             formatted_id = f"{customer_id[:3]}-{customer_id[3:6]}-{customer_id[6:]}"
+
+            # Use account name if available, otherwise just the formatted ID
+            if account_name:
+                display_name = f"{account_name} ({formatted_id})"
+            else:
+                display_name = formatted_id
+
             accounts.append({
                 'id': account_id,
                 'customer_id': customer_id,
-                'display_name': formatted_id,
+                'account_name': account_name or formatted_id,
+                'formatted_id': formatted_id,
+                'display_name': display_name,
                 'env_file': str(env_file)
             })
 
-    return sorted(accounts, key=lambda x: x['customer_id'])
+    return sorted(accounts, key=lambda x: x['account_name'])
 
 def get_pending_approvals():
     """Get all pending approval files"""
