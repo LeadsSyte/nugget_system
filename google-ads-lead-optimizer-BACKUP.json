@@ -1,0 +1,301 @@
+{
+  "name": "Google Ads Lead Optimizer",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5d9f0c0e-d8f9-498b-b683-66202bd60ee0",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        784,
+        3488
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Client Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "5371ea63-b2c7-4bde-b089-0b06a345930d",
+      "name": "Read Client Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1232,
+        3488
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "account_id",
+              "name": "account_id",
+              "value": "={{ $json.account_id || $json['Account ID'] }}",
+              "type": "string"
+            },
+            {
+              "id": "account_name",
+              "name": "account_name",
+              "value": "={{ $json.account_name || $json['Account Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "target_cpl",
+              "name": "target_cpl",
+              "value": "={{ $json.target_cpl || $json['Target CPL'] }}",
+              "type": "number"
+            },
+            {
+              "id": "weekly_budget",
+              "name": "weekly_budget",
+              "value": "={{ $json.weekly_budget || $json['Weekly Budget'] }}",
+              "type": "number"
+            },
+            {
+              "id": "campaign_ids",
+              "name": "campaign_ids",
+              "value": "={{ ($json.campaign_ids || $json['Campaign IDs']).split(',').map(id => id.trim()) }}",
+              "type": "array"
+            },
+            {
+              "id": "manager_id",
+              "name": "manager_id",
+              "value": "={{ String($json['Manager ID'] || '').replace(/[^0-9]/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "82ae38e7-f455-47fa-9369-8c86e5c794ac",
+      "name": "Normalize Client Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        1456,
+        3488
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Google Ads queries with proper date range\nconst items = $input.all();\nconst updatedItems = items.map((item) => {\n  const accountId = item.json.account_id;\n  const campaignIds = item.json.campaign_ids;\n  const managerId = item.json.manager_id;\n  \n  // Calculate date range (last 7 days)\n  const endDate = new Date();\n  const startDate = new Date();\n  startDate.setDate(startDate.getDate() - 7);\n  \n  const formatDate = (date) => {\n    const year = date.getFullYear();\n    const month = String(date.getMonth() + 1).padStart(2, '0');\n    const day = String(date.getDate()).padStart(2, '0');\n    return `${year}-${month}-${day}`;\n  };\n  \n  const dateRangeClause = `segments.date BETWEEN '${formatDate(startDate)}' AND '${formatDate(endDate)}'`;\n  const campaignFilter = `campaign.id IN (${campaignIds.join(',')})`;\n  \n  // Build queries object\n  const queries = {\n    campaign: `SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.average_cpc, metrics.cost_per_conversion FROM campaign WHERE ${campaignFilter} AND ${dateRangeClause}`,\n    \n    keyword: `SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM keyword_view WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`,\n    \n    ad: `SELECT campaign.name, ad_group.name, ad_group_ad.ad.id, ad_group_ad.ad.type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM ad_group_ad WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`,\n    \n    search_terms: `SELECT search_term_view.search_term, segments.search_term_match_type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr FROM search_term_view WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`\n  };\n  \n  return {\n    json: {\n      account_id: item.json.account_id,\n      account_name: item.json.account_name,\n      target_cpl: item.json.target_cpl,\n      weekly_budget: item.json.weekly_budget,\n      campaign_ids: item.json.campaign_ids,\n      manager_id: managerId,\n      queries: queries,\n      date_range: {\n        start: formatDate(startDate),\n        end: formatDate(endDate)\n      }\n    }\n  };\n});\n\nreturn updatedItems;"
+      },
+      "id": "bc3d8bfa-ac35-4f86-b8c1-8c346636bdd4",
+      "name": "Prepare Google Ads Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        3488
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v17/customers/{{ $json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.average_cpc, metrics.cost_per_conversion FROM campaign WHERE campaign.id IN ({{ $json.campaign_ids.join(',') }}) AND segments.date DURING LAST_30_DAYS"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "02252c0e-5067-4043-9199-3cf03baaa914",
+      "name": "Fetch Campaign Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        3200
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v17/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=SELECT campaign.name, ad_group.name, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM keyword_view WHERE campaign.id IN ({{ $('Prepare Google Ads Queries').item.json.campaign_ids.join(',') }}) AND segments.date DURING LAST_30_DAYS ORDER BY metrics.cost_micros DESC"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "78868645-4865-4f5f-a83e-64c72c27874c",
+      "name": "Fetch Keyword Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        3392
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v17/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=SELECT campaign.name, ad_group.name, ad_group_ad.ad.id, ad_group_ad.ad.type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM ad_group_ad WHERE campaign.id IN ({{ $('Prepare Google Ads Queries').item.json.campaign_ids.join(',') }}) AND segments.date DURING LAST_30_DAYS ORDER BY metrics.cost_micros DESC"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "ad743eac-0a4d-43ba-8f15-0b6926968108",
+      "name": "Fetch Ad Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        3584
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v17/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=SELECT search_term_view.search_term, segments.search_term_match_type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr FROM search_term_view WHERE campaign.id IN ({{ $('Prepare Google Ads Queries').item.json.campaign_ids.join(',') }}) AND segments.date DURING LAST_30_DAYS ORDER BY metrics.cost_micros DESC"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "29abcaf9-3339-4c0b-a82d-284eeed30594",
+      "name": "Fetch Search Terms",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1904,
+        3776
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    }
+  ]
+}
