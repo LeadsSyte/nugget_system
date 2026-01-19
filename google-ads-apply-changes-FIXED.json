@@ -1,0 +1,247 @@
+{
+  "name": "Google Ads - Apply Approved Changes - FIXED",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "8880697f-1269-4a51-9eda-bb5d6f14079f",
+      "name": "Every Hour1",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        1856,
+        7632
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1117461474,
+          "mode": "list",
+          "cachedResultName": "Pending Changes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit#gid=1117461474"
+        },
+        "options": {}
+      },
+      "id": "fae3f2ee-c060-4f60-bdbb-616a46aecf04",
+      "name": "Read Pending Changes1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        2064,
+        7632
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter for approved items\nconst items = $input.all();\n\nconst approved = items.filter(item => {\n    const row = item.json;\n    const autoApply = String(row.auto_apply_suggested || '').trim();\n    const applied = String(row.Applied || '').trim();\n    \n    return (autoApply === 'Yes') && (applied !== 'Yes' && applied !== 'Applied');\n});\n\nconsole.log(`Found ${approved.length} changes to apply`);\nreturn approved;\n"
+      },
+      "id": "e63c954a-0551-4656-b546-c9ef0dab65ac",
+      "name": "Filter Approved1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2288,
+        7632
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Google Ads API mutation - FIXED VERSION\nconst row = $json;\n\nconsole.log('=== Processing Row ===');\nconsole.log('Row number:', row.row_number);\nconsole.log('Entity:', row.entity_name);\nconsole.log('Entity ID:', row.entity_id);\nconsole.log('Campaign ID:', row.campaign_id);\nconsole.log('Ad Group ID:', row.ad_group_id);\nconsole.log('Change type:', row.change_type);\n\n// Extract account ID (remove dashes)\nconst accountId = String(row.account_id || '865-640-6794').replace(/-/g, '');\nconsole.log('Account ID:', accountId);\n\n// Get change type\nlet changeType = row.change_type || '';\n\nif (!changeType && row.raw_recommendation) {\n    try {\n        const rawRec = typeof row.raw_recommendation === 'string' \n            ? JSON.parse(row.raw_recommendation) \n            : row.raw_recommendation;\n        \n        changeType = rawRec.type || rawRec.change_type || '';\n        console.log('Extracted change_type from raw_recommendation:', changeType);\n    } catch (e) {\n        console.log('Could not parse raw_recommendation:', e.message);\n    }\n}\n\nchangeType = String(changeType).toUpperCase().trim();\nconsole.log('Final change_type:', changeType);\n\nlet requestBody = null;\nlet endpoint = '';\nlet skipReason = null;\n\n// ===== PAUSE KEYWORD =====\nif (changeType === 'PAUSE_KEYWORD') {\n    console.log('✓ PAUSE_KEYWORD detected');\n    \n    // Validate we have criterion_id\n    if (!row.entity_id || row.entity_id === 'N/A' || row.entity_id === row.entity_name) {\n        skipReason = `Cannot pause keyword without valid criterion ID. Got: ${row.entity_id}`;\n        console.log('✗', skipReason);\n    } else if (!row.ad_group_id) {\n        skipReason = `Cannot pause keyword without ad_group_id. Got: ${row.ad_group_id}`;\n        console.log('✗', skipReason);\n    } else {\n        // Build resource name: customers/{customer_id}/adGroupCriteria/{ad_group_id}~{criterion_id}\n        const resourceName = `customers/${accountId}/adGroupCriteria/${row.ad_group_id}~${row.entity_id}`;\n        \n        requestBody = {\n            operations: [{\n                updateMask: \"status\",\n                update: {\n                    resourceName: resourceName,\n                    status: \"PAUSED\"\n                }\n            }]\n        };\n        endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/adGroupCriteria:mutate`;\n        console.log('✓ Built PAUSE_KEYWORD mutation');\n        console.log('  Resource:', resourceName);\n    }\n}\n\n// ===== ADD NEGATIVE KEYWORD =====\nelse if (changeType === 'ADD_NEGATIVE_KEYWORD' || changeType === 'NEGATIVE_KEYWORD') {\n    console.log('✓ ADD_NEGATIVE_KEYWORD detected');\n    \n    if (!row.entity_name) {\n        skipReason = 'Cannot add negative keyword without keyword text';\n        console.log('✗', skipReason);\n    } else if (!row.campaign_id && !row.ad_group_id) {\n        skipReason = 'Cannot add negative keyword without campaign_id or ad_group_id';\n        console.log('✗', skipReason);\n    } else {\n        // Determine if campaign-level or ad group-level negative\n        const isCampaignLevel = !!row.campaign_id && !row.ad_group_id;\n        \n        if (isCampaignLevel) {\n            // Campaign-level negative keyword\n            requestBody = {\n                operations: [{\n                    create: {\n                        campaign: `customers/${accountId}/campaigns/${row.campaign_id}`,\n                        keyword: {\n                            text: row.entity_name,\n                            matchType: \"BROAD\"  // or PHRASE, EXACT based on your preference\n                        },\n                        type: \"KEYWORD\"\n                    }\n                }]\n            };\n            endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/campaignCriteria:mutate`;\n            console.log('✓ Built campaign-level NEGATIVE_KEYWORD mutation');\n        } else {\n            // Ad group-level negative keyword\n            requestBody = {\n                operations: [{\n                    create: {\n                        adGroup: `customers/${accountId}/adGroups/${row.ad_group_id}`,\n                        keyword: {\n                            text: row.entity_name,\n                            matchType: \"BROAD\"\n                        },\n                        type: \"KEYWORD\",\n                        negative: true\n                    }\n                }]\n            };\n            endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/adGroupCriteria:mutate`;\n            console.log('✓ Built ad group-level NEGATIVE_KEYWORD mutation');\n        }\n        console.log('  Keyword:', row.entity_name);\n    }\n}\n\n// ===== PAUSE CAMPAIGN =====\nelse if (changeType === 'PAUSE_CAMPAIGN') {\n    console.log('✓ PAUSE_CAMPAIGN detected');\n    \n    if (!row.campaign_id && !row.entity_id) {\n        skipReason = 'Cannot pause campaign without campaign_id or entity_id';\n        console.log('✗', skipReason);\n    } else {\n        const campaignId = row.campaign_id || row.entity_id;\n        const resourceName = `customers/${accountId}/campaigns/${campaignId}`;\n        \n        requestBody = {\n            operations: [{\n                updateMask: \"status\",\n                update: {\n                    resourceName: resourceName,\n                    status: \"PAUSED\"\n                }\n            }]\n        };\n        endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/campaigns:mutate`;\n        console.log('✓ Built PAUSE_CAMPAIGN mutation');\n        console.log('  Resource:', resourceName);\n    }\n}\n\n// ===== PAUSE AD =====\nelse if (changeType === 'PAUSE_AD') {\n    console.log('✓ PAUSE_AD detected');\n    \n    if (!row.entity_id || row.entity_id === 'N/A') {\n        skipReason = 'Cannot pause ad without valid entity_id (ad ID)';\n        console.log('✗', skipReason);\n    } else if (!row.ad_group_id) {\n        skipReason = 'Cannot pause ad without ad_group_id';\n        console.log('✗', skipReason);\n    } else {\n        // Resource name: customers/{customer_id}/adGroupAds/{ad_group_id}~{ad_id}\n        const resourceName = `customers/${accountId}/adGroupAds/${row.ad_group_id}~${row.entity_id}`;\n        \n        requestBody = {\n            operations: [{\n                updateMask: \"status\",\n                update: {\n                    resourceName: resourceName,\n                    status: \"PAUSED\"\n                }\n            }]\n        };\n        endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/adGroupAds:mutate`;\n        console.log('✓ Built PAUSE_AD mutation');\n        console.log('  Resource:', resourceName);\n    }\n}\n\n// ===== ADJUST BID =====\nelse if (changeType === 'ADJUST_BID' || changeType.includes('BID')) {\n    console.log('✓ ADJUST_BID detected');\n    \n    if (!row.entity_id || !row.ad_group_id) {\n        skipReason = 'Cannot adjust bid without entity_id (criterion_id) and ad_group_id';\n        console.log('✗', skipReason);\n    } else if (!row.new_value) {\n        skipReason = 'Cannot adjust bid without new_value';\n        console.log('✗', skipReason);\n    } else {\n        // Convert dollars to micros (1 USD = 1,000,000 micros)\n        const newBidMicros = Math.round(parseFloat(row.new_value) * 1000000);\n        const resourceName = `customers/${accountId}/adGroupCriteria/${row.ad_group_id}~${row.entity_id}`;\n        \n        requestBody = {\n            operations: [{\n                updateMask: \"cpcBidMicros\",\n                update: {\n                    resourceName: resourceName,\n                    cpcBidMicros: newBidMicros\n                }\n            }]\n        };\n        endpoint = `https://googleads.googleapis.com/v22/customers/${accountId}/adGroupCriteria:mutate`;\n        console.log('✓ Built ADJUST_BID mutation');\n        console.log('  New bid:', `$${row.new_value} (${newBidMicros} micros)`);\n    }\n}\n\n// ===== UNKNOWN CHANGE TYPE =====\nelse {\n    skipReason = `Unsupported change type: ${changeType}`;\n    console.log('✗', skipReason);\n}\n\n// Return result\nif (skipReason) {\n    console.log('⚠ Skipping this item');\n    return {\n        json: {\n            ...row,\n            error: skipReason,\n            skip: true,\n            has_error: true\n        }\n    };\n}\n\nconsole.log('✓ Mutation ready');\nconsole.log('  Endpoint:', endpoint);\n\nreturn {\n    json: {\n        ...row,\n        api_endpoint: endpoint,\n        api_body: requestBody,\n        skip: false,\n        has_error: false\n    }\n};\n"
+      },
+      "id": "ca3d9aea-41f5-4938-9d53-fe260eff668c",
+      "name": "Build API Mutation1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        7632
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Skip items with errors - WITH EXTENSIVE LOGGING\nconst items = $input.all();\n\nconsole.log('=== SKIP INVALID ITEMS ===');\nconsole.log(`Total items received: ${items.length}`);\n\nitems.forEach((item, index) => {\n    console.log(`\\nItem ${index + 1}:`);\n    console.log(`  Row: ${item.json.row_number}`);\n    console.log(`  Entity: ${item.json.entity_name}`);\n    console.log(`  Skip: ${item.json.skip}`);\n    console.log(`  Has error: ${item.json.has_error}`);\n    if (item.json.error) {\n        console.log(`  Error: ${item.json.error}`);\n    }\n});\n\nconst valid = items.filter(item => {\n    const shouldSkip = item.json.skip === true;\n    console.log(`Row ${item.json.row_number}: skip=${item.json.skip}, will ${shouldSkip ? 'SKIP' : 'KEEP'}`);\n    return !shouldSkip;\n});\n\nconsole.log(`\\n✓ RESULT: ${valid.length} valid items out of ${items.length} total`);\n\nif (valid.length === 0) {\n    throw new Error('NO VALID ITEMS! All items were skipped. Check the logs above for reasons.');\n}\n\nconsole.log(`✓ ${valid.length} items will proceed to Apply to Google Ads`);\nvalid.forEach(item => {\n    console.log(`  - Row ${item.json.row_number}: ${item.json.entity_name}`);\n});\n\nreturn valid;\n"
+      },
+      "id": "4a96aa5e-20b4-40ae-a437-926acd7d7254",
+      "name": "Skip Invalid Items1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        7632
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_endpoint }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "9435587763"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.api_body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "22091079-fa74-47c9-b76a-0f29053fe556",
+      "name": "Apply to Google Ads1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2944,
+        7632
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Pending Changes",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Applied": "Yes",
+            "Applied Date": "={{ $now.toISO() }}",
+            "Notes": "Successfully applied"
+          }
+        },
+        "options": {}
+      },
+      "id": "1778b997-2f0d-4298-b619-20ef9e5a4654",
+      "name": "Mark as Applied in Sheet1",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        3216,
+        7616
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Every Hour1": {
+      "main": [
+        [
+          {
+            "node": "Read Pending Changes1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pending Changes1": {
+      "main": [
+        [
+          {
+            "node": "Filter Approved1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Approved1": {
+      "main": [
+        [
+          {
+            "node": "Build API Mutation1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build API Mutation1": {
+      "main": [
+        [
+          {
+            "node": "Skip Invalid Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Invalid Items1": {
+      "main": [
+        [
+          {
+            "node": "Apply to Google Ads1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply to Google Ads1": {
+      "main": [
+        [
+          {
+            "node": "Mark as Applied in Sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "FIXED-VERSION-2026",
+  "meta": {
+    "instanceId": "effc64e48969b17cedd1f53b2e717f8f253191706dc7648f0e4a97305561804b"
+  },
+  "tags": []
+}
