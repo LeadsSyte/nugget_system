@@ -145,9 +145,9 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "Applied": "Yes",
-            "Applied Date": "={{ $now.toISO() }}",
-            "Notes": "Successfully applied"
+            "Applied": "=Yes",
+            "Applied Date": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}",
+            "Notes": "=Successfully applied via workflow"
           }
         },
         "options": {}
