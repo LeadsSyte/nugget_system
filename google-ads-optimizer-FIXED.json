@@ -1,0 +1,703 @@
+{
+  "name": "Google Ads Optimizer - Apply Changes (Production) - FIXED",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "02871a3e-0cba-433c-9b3b-e32dcb082724",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Client Config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "id": "ad12a8bd-a255-4909-938d-ebe54a010b85",
+      "name": "Read Client Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1920,
+        7600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "account_id",
+              "name": "account_id",
+              "value": "={{ $json.account_id || $json['Account ID'] }}",
+              "type": "string"
+            },
+            {
+              "id": "account_name",
+              "name": "account_name",
+              "value": "={{ $json.account_name || $json['Account Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "target_cpl",
+              "name": "target_cpl",
+              "value": "={{ $json.target_cpl || $json['Target CPL'] }}",
+              "type": "number"
+            },
+            {
+              "id": "weekly_budget",
+              "name": "weekly_budget",
+              "value": "={{ $json.weekly_budget || $json['Weekly Budget'] }}",
+              "type": "number"
+            },
+            {
+              "id": "campaign_ids",
+              "name": "campaign_ids",
+              "value": "={{ ($json.campaign_ids || $json['Campaign IDs']).split(',').map(id => id.trim()) }}",
+              "type": "array"
+            },
+            {
+              "id": "e73b004f-858e-4014-9707-ee2078e7f39f",
+              "name": "Manager ID",
+              "value": "={{ $json[\"Manager ID\"] }}",
+              "type": "string"
+            },
+            {
+              "id": "manager_id",
+              "name": "manager_id",
+              "value": "={{ String($json['Manager ID']).replace(/[^0-9]/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f96c4273-b1f9-40b3-ac4e-dbbd02a0e41c",
+      "name": "Normalize Client Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        2144,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Google Ads queries with proper date range - FIXED to include criterion_id\nconst items = $input.all();\nconst updatedItems = items.map((item) => {\n  const accountId = item.json.account_id;\n  const campaignIds = item.json.campaign_ids;\n  const managerId = item.json.manager_id;\n  \n  // Calculate date range (last 7 days)\n  const endDate = new Date();\n  const startDate = new Date();\n  startDate.setDate(startDate.getDate() - 7);\n  \n  const formatDate = (date) => {\n    const year = date.getFullYear();\n    const month = String(date.getMonth() + 1).padStart(2, '0');\n    const day = String(date.getDate()).padStart(2, '0');\n    return `${year}-${month}-${day}`;\n  };\n  \n  const dateRangeClause = `segments.date BETWEEN '${formatDate(startDate)}' AND '${formatDate(endDate)}'`;\n  const campaignFilter = `campaign.id IN (${campaignIds.join(',')})`;\n  \n  // Build queries object - FIXED keyword query to include criterion_id, resource_name, status\n  const queries = {\n    campaign: `SELECT campaign.id, campaign.name, campaign.status, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.average_cpc, metrics.cost_per_conversion FROM campaign WHERE ${campaignFilter} AND ${dateRangeClause}`,\n    \n    keyword: `SELECT campaign.id, campaign.name, ad_group.id, ad_group.name, ad_group_criterion.criterion_id, ad_group_criterion.resource_name, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, ad_group_criterion.status, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM keyword_view WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`,\n    \n    ad: `SELECT campaign.id, campaign.name, ad_group.id, ad_group.name, ad_group_ad.ad.id, ad_group_ad.ad.type, ad_group_ad.status, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr, metrics.cost_per_conversion FROM ad_group_ad WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`,\n    \n    search_terms: `SELECT campaign.id, campaign.name, ad_group.id, ad_group.name, search_term_view.search_term, segments.search_term_match_type, metrics.impressions, metrics.clicks, metrics.conversions, metrics.cost_micros, metrics.ctr FROM search_term_view WHERE ${campaignFilter} AND ${dateRangeClause} ORDER BY metrics.cost_micros DESC`\n  };\n  \n  return {\n    json: {\n      account_id: item.json.account_id,\n      account_name: item.json.account_name,\n      target_cpl: item.json.target_cpl,\n      weekly_budget: item.json.weekly_budget,\n      campaign_ids: item.json.campaign_ids,\n      manager_id: managerId,\n      queries: queries,\n      date_range: {\n        start: formatDate(startDate),\n        end: formatDate(endDate)\n      }\n    }\n  };\n});\n\nreturn updatedItems;"
+      },
+      "id": "bb326e5d-62c9-494e-abad-ea0ff93dc2d2",
+      "name": "Prepare Google Ads Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2368,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $('Prepare Google Ads Queries').item.json.queries.campaign } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "68de92fa-d99a-4156-bc4d-e3d0e8593eb4",
+      "name": "Fetch Campaign Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2592,
+        7312
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $('Prepare Google Ads Queries').item.json.queries.keyword } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "115b5666-68f5-4785-bd46-03aaebf67a5c",
+      "name": "Fetch Keyword Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2592,
+        7504
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $('Prepare Google Ads Queries').item.json.queries.ad } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "764dcfba-1a4f-42d5-8622-730d6cac5b03",
+      "name": "Fetch Ad Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2592,
+        7696
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $('Prepare Google Ads Queries').item.json.account_id.replace(/-/g, '') }}/googleAds:search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $('Prepare Google Ads Queries').item.json.manager_id }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { query: $('Prepare Google Ads Queries').item.json.queries.search_terms } }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "0ce78c56-a87b-4761-ba94-96c5124fc5a2",
+      "name": "Fetch Search Terms",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2592,
+        7888
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// FIXED to extract criterion_id, resource_name, status, campaign_id, ad_group_id\nconst clientData = $('Prepare Google Ads Queries').item.json;\nconst allInputs = $input.all();\n\nconsole.log('=== FIXED STRUCTURE VERSION - WITH CRITERION IDS ===');\nconsole.log('Number of inputs:', allInputs.length);\n\nfunction microsToCurrency(micros) {\n    const num = parseFloat(micros);\n    if (isNaN(num)) return 0;\n    return num / 1000000;\n}\n\nconst campaigns = [];\nconst keywords = [];\nconst ads = [];\nconst searchTerms = [];\n\n// Process each input\nallInputs.forEach((input, index) => {\n    console.log(`\\n--- Input ${index} ---`);\n    \n    let dataArray = [];\n    \n    // Handle the aggregate node wrapper\n    if (input.json && input.json.data && Array.isArray(input.json.data)) {\n        console.log('Found data array wrapper');\n        dataArray = input.json.data;\n    } \n    // Fallback: check if it's a direct results array\n    else if (input.json && input.json.results) {\n        console.log('Found direct results');\n        dataArray = [input.json];\n    }\n    else {\n        console.log('Unknown structure, skipping');\n        return;\n    }\n    \n    console.log('Data array length:', dataArray.length);\n    \n    // Process each item in the data array\n    dataArray.forEach((data, dataIndex) => {\n        if (!data || !data.results || data.results.length === 0) {\n            console.log(`  Data ${dataIndex}: no results`);\n            return;\n        }\n        \n        console.log(`  Data ${dataIndex}: ${data.results.length} results`);\n        \n        const first = data.results[0];\n        const keys = Object.keys(first);\n        console.log(`  First result keys: ${keys.join(', ')}`);\n        \n        // Process campaign data\n        if (first.campaign && first.campaign.id && !first.adGroupCriterion && !first.adGroupAd) {\n            console.log('  ✓ Processing campaign data');\n            \n            data.results.forEach(r => {\n                const c = r.campaign;\n                const m = r.metrics;\n                \n                if (!c || !m) return;\n                \n                const campaign = {\n                    id: String(c.id || ''),\n                    name: String(c.name || ''),\n                    status: String(c.status || ''),\n                    impressions: parseInt(m.impressions || '0'),\n                    clicks: parseInt(m.clicks || '0'),\n                    conversions: parseFloat(m.conversions || 0),\n                    cost: microsToCurrency(m.costMicros || '0'),\n                    ctr: parseFloat(m.ctr || 0) * 100,\n                    avg_cpc: microsToCurrency(m.averageCpc || '0'),\n                    cost_per_conversion: microsToCurrency(m.costPerConversion || 0)\n                };\n                \n                campaigns.push(campaign);\n                console.log(`    Added campaign: ${campaign.name} (${campaign.impressions} impr, ${campaign.clicks} clicks)`);\n            });\n        }\n        \n        // Process keyword data - FIXED to extract criterion_id and other IDs\n        else if (first.adGroupCriterion && first.adGroupCriterion.keyword) {\n            console.log('  ✓ Processing keyword data WITH CRITERION IDs');\n            \n            data.results.forEach(r => {\n                const k = r.adGroupCriterion && r.adGroupCriterion.keyword;\n                const agc = r.adGroupCriterion;\n                const m = r.metrics;\n                const c = r.campaign;\n                const ag = r.adGroup;\n                \n                if (!k || !m || !agc) return;\n                \n                const keyword = {\n                    criterion_id: String(agc.criterionId || ''),  // ✅ CRITICAL FIX\n                    resource_name: String(agc.resourceName || ''),  // ✅ Alternative identifier\n                    text: String(k.text || ''),\n                    match_type: String(k.matchType || ''),\n                    status: String(agc.status || ''),  // ✅ Current status\n                    campaign: String((c && c.name) || ''),\n                    campaign_id: String((c && c.id) || ''),  // ✅ Campaign ID\n                    ad_group: String((ag && ag.name) || ''),\n                    ad_group_id: String((ag && ag.id) || ''),  // ✅ Ad Group ID\n                    impressions: parseInt(m.impressions || '0'),\n                    clicks: parseInt(m.clicks || '0'),\n                    conversions: parseFloat(m.conversions || 0),\n                    cost: microsToCurrency(m.costMicros || '0'),\n                    ctr: parseFloat(m.ctr || 0) * 100,\n                    cost_per_conversion: microsToCurrency(m.costPerConversion || 0)\n                };\n                \n                keywords.push(keyword);\n                console.log(`    Added keyword: \"${keyword.text}\" (ID: ${keyword.criterion_id})`);\n            });\n            \n            console.log(`    Total keywords with IDs: ${data.results.length}`);\n        }\n        \n        // Process ad data - FIXED to extract ad_group_id and campaign_id\n        else if (first.adGroupAd) {\n            console.log('  ✓ Processing ad data');\n            \n            data.results.forEach(r => {\n                const ada = r.adGroupAd;\n                const a = ada && ada.ad;\n                const m = r.metrics;\n                const c = r.campaign;\n                const ag = r.adGroup;\n                \n                if (!a || !m) return;\n                \n                ads.push({\n                    id: String(a.id || ''),\n                    type: String(a.type || ''),\n                    status: String((ada && ada.status) || ''),\n                    campaign: String((c && c.name) || ''),\n                    campaign_id: String((c && c.id) || ''),\n                    ad_group: String((ag && ag.name) || ''),\n                    ad_group_id: String((ag && ag.id) || ''),\n                    impressions: parseInt(m.impressions || '0'),\n                    clicks: parseInt(m.clicks || '0'),\n                    conversions: parseFloat(m.conversions || 0),\n                    cost: microsToCurrency(m.costMicros || '0'),\n                    ctr: parseFloat(m.ctr || 0) * 100,\n                    cost_per_conversion: microsToCurrency(m.costPerConversion || 0)\n                });\n            });\n            \n            console.log(`    Added ${data.results.length} ads`);\n        }\n        \n        // Process search terms - FIXED to extract campaign_id and ad_group_id\n        else if (first.searchTermView) {\n            console.log('  ✓ Processing search terms');\n            \n            data.results.forEach(r => {\n                const st = r.searchTermView;\n                const m = r.metrics;\n                const c = r.campaign;\n                const ag = r.adGroup;\n                \n                if (!st || !m) return;\n                \n                searchTerms.push({\n                    search_term: String(st.searchTerm || ''),\n                    match_type: String((r.segments && r.segments.searchTermMatchType) || ''),\n                    campaign: String((c && c.name) || ''),\n                    campaign_id: String((c && c.id) || ''),\n                    ad_group: String((ag && ag.name) || ''),\n                    ad_group_id: String((ag && ag.id) || ''),\n                    impressions: parseInt(m.impressions || '0'),\n                    clicks: parseInt(m.clicks || '0'),\n                    conversions: parseFloat(m.conversions || 0),\n                    cost: microsToCurrency(m.costMicros || '0'),\n                    ctr: parseFloat(m.ctr || 0) * 100\n                });\n            });\n            \n            console.log(`    Added ${data.results.length} search terms`);\n        }\n        \n        else {\n            console.log('  ✗ Unknown data type');\n        }\n    });\n});\n\n// Calculate totals\nlet totalImpressions = 0;\nlet totalClicks = 0;\nlet totalConversions = 0;\nlet totalCost = 0;\n\ncampaigns.forEach(c => {\n    totalImpressions += c.impressions;\n    totalClicks += c.clicks;\n    totalConversions += c.conversions;\n    totalCost += c.cost;\n});\n\nconsole.log('\\n=== FINAL TOTALS ===');\nconsole.log('Campaigns:', campaigns.length);\nconsole.log('Keywords WITH criterion_id:', keywords.filter(k => k.criterion_id).length, '/', keywords.length);\nconsole.log('Ads:', ads.length);\nconsole.log('Search Terms:', searchTerms.length);\nconsole.log('Total Impressions:', totalImpressions);\nconsole.log('Total Clicks:', totalClicks);\nconsole.log('Total Conversions:', totalConversions);\nconsole.log('Total Cost:', totalCost.toFixed(2));\n\nconst summary = {\n    total_impressions: totalImpressions,\n    total_clicks: totalClicks,\n    total_conversions: totalConversions,\n    total_cost: totalCost,\n    average_cpl: totalConversions > 0 ? totalCost / totalConversions : 0,\n    average_ctr: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0\n};\n\nconsole.log('=== END ===');\n\nreturn {\n    json: {\n        account_name: clientData.account_name,\n        account_id: clientData.account_id,\n        target_cpl: clientData.target_cpl,\n        weekly_budget: clientData.weekly_budget,\n        performance_data: {\n            summary: summary,\n            campaigns: campaigns,\n            keywords: keywords,\n            ads: ads,\n            search_terms: searchTerms\n        }\n    }\n};\n"
+      },
+      "id": "568a7711-e2c1-4f4f-8a05-3935c3affaaf",
+      "name": "Prepare Data for Claude",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format the AI analysis into an email report\nconst accountName = $('Prepare Data for Claude').item.json.account_name;\nconst performanceData = $('Prepare Data for Claude').item.json.performance_data;\nconst claudeResponse = $input.item.json;\n\n// Extract recommendations from Claude\nlet recommendations = [];\ntry {\n    const content = claudeResponse.content;\n    if (content && content.parts && content.parts[0]) {\n        const responseText = content.parts[0].text;\n        const analysis = JSON.parse(responseText);\n        recommendations = analysis.high_confidence_changes || [];\n    }\n} catch (error) {\n    console.log('Could not parse Claude response:', error);\n}\n\n// Build email body\nconst summary = performanceData.summary;\nconst emailBody = `Google Ads Lead Optimizer - Weekly Report\n\nAccount: ${accountName}\n\nPERFORMANCE SUMMARY\n------------------\nTotal Impressions: ${summary.total_impressions.toLocaleString()}\nTotal Clicks: ${summary.total_clicks.toLocaleString()}\nTotal Conversions: ${summary.total_conversions}\nTotal Cost: $${summary.total_cost.toFixed(2)}\nAverage CPL: $${summary.average_cpl.toFixed(2)}\nAverage CTR: ${summary.average_ctr.toFixed(2)}%\n\nKEY INSIGHTS\n------------\n${recommendations.length > 0 ? recommendations.map((r, i) => `${i+1}. ${r.entity_name}: ${r.reason}`).join('\\n') : 'No high-confidence changes recommended at this time.'}\n\n---\nThis report was generated automatically by Google Ads Lead Optimizer.\n`;\n\nreturn {\n    json: {\n        account_name: accountName,\n        email_subject: `Google Ads Optimization Report - ${accountName}`,\n        email_body: emailBody\n    }\n};\n"
+      },
+      "id": "3ead2ea5-4ba4-460f-929c-cc76319a3581",
+      "name": "Format Email Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3616,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@syte.co.za",
+        "toEmail": "mike@syte.co.za",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_body.replace(/\\n/g, '<br>') }}",
+        "options": {}
+      },
+      "id": "7c3ef94a-d77c-4dd7-94f1-d755c856a820",
+      "name": "Send Email Report",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3840,
+        7600
+      ],
+      "webhookId": "85868713-1040-4062-b35d-70d2874ee0bf",
+      "alwaysOutputData": true,
+      "credentials": {
+        "smtp": {
+          "id": "SdVQaaHj4BqWtNwQ",
+          "name": "SMTP account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Google Ads optimization expert. Analyze the following performance data and provide actionable recommendations.\n\nAccount: {{ $json.account_name }}\nTarget CPL: ${{ $json.target_cpl }}\nWeekly Budget: ${{ $json.weekly_budget }}\n\nPerformance Data:\n{{ JSON.stringify($json.performance_data, null, 2) }}\n\nIMPORTANT: When recommending keyword changes, use the criterion_id field as the entity_id (NOT the keyword text).\n\nProvide your analysis in JSON format with:\n1. high_confidence_changes: Array of changes that can be auto-applied (pause underperforming keywords, add negative keywords, adjust bids)\n2. review_required: Array of strategic recommendations requiring human review\n3. insights: Summary of key findings and overall account health\n\nFor each change include:\n- type: Change type (PAUSE_KEYWORD, ADD_NEGATIVE_KEYWORD, ADJUST_BID, etc.)\n- entity_name: Human-readable name (keyword text, campaign name, etc.)\n- entity_id: The actual ID from Google Ads (use criterion_id for keywords, campaign_id for campaigns, etc.)\n- campaign_id: The campaign ID where this entity belongs\n- ad_group_id: The ad group ID where this entity belongs (if applicable)\n- reason: Why this change is recommended\n- expected_impact: What improvement is expected\n- action_details: Specific details about the action"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "c165992a-c804-4ef9-924b-4f35a284775f",
+      "name": "Gemini AI Analysis",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        3264,
+        7600
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "z8ODK687wO6Fv66a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "id-1",
+              "name": "date_range",
+              "value": "={{ JSON.stringify({ \"start\": $now.minus({ days: 30 }).toFormat('yyyy-MM-dd'), \"end\": $now.toFormat('yyyy-MM-dd') }) }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "308300b0-7603-4a70-b11e-c734d3c102a7",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        1696,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "58261b42-81f8-4707-b59c-98aea9e8f805",
+      "name": "Combine All Google Ads Data",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Gemini recommendations into individual change records - FIXED to use criterion_id\nconst geminiResponse = $json;\nconst clientData = $('Prepare Google Ads Queries').item.json;\n\n// Extract the text from Gemini's response structure\nlet geminiText = '';\nif (geminiResponse.content && geminiResponse.content.parts && geminiResponse.content.parts[0]) {\n    geminiText = geminiResponse.content.parts[0].text;\n} else if (geminiResponse.text) {\n    geminiText = geminiResponse.text;\n} else if (typeof geminiResponse === 'string') {\n    geminiText = geminiResponse;\n}\n\n// Parse the JSON from the text\nlet analysis = {};\ntry {\n    analysis = JSON.parse(geminiText);\n} catch (error) {\n    console.error('Failed to parse Gemini response:', error);\n    return [];\n}\n\n// Combine BOTH high_confidence_changes AND review_required\nlet allRecommendations = [];\n\n// Add high confidence changes (can be auto-applied)\nif (analysis.high_confidence_changes && analysis.high_confidence_changes.length > 0) {\n    allRecommendations = allRecommendations.concat(\n        analysis.high_confidence_changes.map(rec => ({\n            ...rec,\n            confidence: 'high',\n            auto_apply: 'Yes'\n        }))\n    );\n}\n\n// Add review required changes (need manual approval)\nif (analysis.review_required && analysis.review_required.length > 0) {\n    allRecommendations = allRecommendations.concat(\n        analysis.review_required.map(rec => ({\n            ...rec,\n            confidence: 'review',\n            auto_apply: 'No'\n        }))\n    );\n}\n\n// If no recommendations at all, return empty\nif (allRecommendations.length === 0) {\n    console.log('No recommendations found');\n    return [];\n}\n\n// Convert each recommendation to a change record - FIXED to ensure entity_id is the criterion_id\nconst changeRecords = allRecommendations.map((rec, index) => {\n    const changeId = `${clientData.account_id}-${Date.now()}-${index}`;\n    \n    // ✅ FIX: Use criterion_id if available, otherwise fall back to entity_id\n    const entityId = rec.criterion_id || rec.entity_id || '';\n    \n    return {\n        change_id: changeId,\n        timestamp: new Date().toISOString(),\n        account_name: clientData.account_name,\n        account_id: clientData.account_id,\n        change_type: rec.type || 'unknown',\n        entity_name: rec.entity_name || '',\n        entity_id: entityId,  // ✅ Now uses criterion_id when available\n        campaign_id: rec.campaign_id || '',\n        ad_group_id: rec.ad_group_id || '',\n        action: rec.action_details?.action || rec.action_details || rec.type || '',\n        current_value: rec.action_details?.current_value || '',\n        new_value: rec.action_details?.new_value || '',\n        reason: rec.reason || '',\n        expected_impact: rec.expected_impact || '',\n        confidence_level: rec.confidence || 'review',\n        auto_apply_suggested: rec.auto_apply || 'No',\n        raw_recommendation: JSON.stringify(rec)\n    };\n});\n\nconsole.log(`Created ${changeRecords.length} change records`);\nchangeRecords.forEach((rec, i) => {\n    console.log(`  ${i+1}. ${rec.change_type} - ${rec.entity_name} (ID: ${rec.entity_id})`);\n});\n\n// Return array of individual changes\nreturn changeRecords.map(record => ({ json: record }));\n"
+      },
+      "id": "e13830a4-4d37-43d0-8d5f-7cf553bb60ee",
+      "name": "Parse Recommendations",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        7600
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1117461474,
+          "mode": "list",
+          "cachedResultName": "Pending Changes",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit#gid=1117461474"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "change_id": "={{ $json.change_id }}",
+            "timestamp": "={{ $json.timestamp }}",
+            "account_name": "={{ $json.account_name }}",
+            "account_id": "={{ $json.account_id }}",
+            "change_type": "={{ $json.change_type }}",
+            "entity_name": "={{ $json.entity_name }}",
+            "entity_id": "={{ $json.entity_id }}",
+            "campaign_id": "={{ $json.campaign_id }}",
+            "ad_group_id": "={{ $json.ad_group_id }}",
+            "action": "={{ $json.action }}",
+            "current_value": "={{ $json.current_value }}",
+            "new_value": "={{ $json.new_value }}",
+            "reason": "={{ $json.reason }}",
+            "expected_impact": "={{ $json.expected_impact }}",
+            "confidence_level": "={{ $json.confidence_level }}",
+            "auto_apply_suggested": "={{ $json.auto_apply_suggested }}",
+            "Applied": "Waiting for Approval",
+            "Applied Date": "",
+            "Notes": "",
+            "raw_recommendation": "={{ $json.raw_recommendation }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "d9b17205-9871-45e3-94a1-acf123f35154",
+      "name": "Write Changes to Approval Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        3936,
+        7600
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Client Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Google Ads Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Google Ads Queries": {
+      "main": [
+        [
+          {
+            "node": "Fetch Campaign Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Keyword Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Ad Data",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Search Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Keyword Data": {
+      "main": [
+        [
+          {
+            "node": "Combine All Google Ads Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Data for Claude": {
+      "main": [
+        [
+          {
+            "node": "Gemini AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Report": {
+      "main": [
+        [
+          {
+            "node": "Send Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Format Email Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Parse Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Read Client Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Ad Data": {
+      "main": [
+        [
+          {
+            "node": "Combine All Google Ads Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Search Terms": {
+      "main": [
+        [
+          {
+            "node": "Combine All Google Ads Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine All Google Ads Data": {
+      "main": [
+        [
+          {
+            "node": "Prepare Data for Claude",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Client Config": {
+      "main": [
+        [
+          {
+            "node": "Normalize Client Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Campaign Data": {
+      "main": [
+        [
+          {
+            "node": "Combine All Google Ads Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Recommendations": {
+      "main": [
+        [
+          {
+            "node": "Write Changes to Approval Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "FIXED-VERSION-2026",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "effc64e48969b17cedd1f53b2e717f8f253191706dc7648f0e4a97305561804b"
+  },
+  "id": "AOB1xj8dgTixSyTh-FIXED",
+  "tags": []
+}
