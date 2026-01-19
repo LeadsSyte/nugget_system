@@ -140,6 +140,8 @@
           "value": "Pending Changes",
           "mode": "list"
         },
+        "columnToMatchOn": "change_id",
+        "valueToMatchOn": "={{ $json.change_id }}",
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
