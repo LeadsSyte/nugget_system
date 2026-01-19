@@ -1,0 +1,235 @@
+{
+  "name": "Google Ads - Campaign Builder",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "builder-trigger-001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [1400, 400]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Client Config",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "builder-read-config-002",
+      "name": "Read Client Config",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1600, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter clients that need campaign building (no Campaign IDs yet, or explicitly marked)\nconst items = $input.all();\n\nconst needsCampaigns = items.filter(item => {\n  const row = item.json;\n  \n  // Must have website URL\n  if (!row['Website URL'] && !row.website_url) {\n    console.log(`Skipping ${row['Account Name']}: No website URL`);\n    return false;\n  }\n  \n  // Skip if already has campaign IDs (unless Build Campaign = Yes)\n  const campaignIds = row['Campaign IDs'] || row.campaign_ids || '';\n  const buildFlag = String(row['Build Campaign'] || row.build_campaign || '').toLowerCase();\n  \n  if (campaignIds && campaignIds.trim() !== '' && buildFlag !== 'yes') {\n    console.log(`Skipping ${row['Account Name']}: Already has campaigns`);\n    return false;\n  }\n  \n  console.log(`✓ Will build campaign for ${row['Account Name']}`);\n  return true;\n});\n\nconsole.log(`Found ${needsCampaigns.length} clients needing campaign builds`);\nreturn needsCampaigns;"
+      },
+      "id": "builder-filter-003",
+      "name": "Filter Clients Needing Campaigns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 400]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "account_id",
+              "name": "account_id",
+              "value": "={{ $json['Account ID'] || $json.account_id }}",
+              "type": "string"
+            },
+            {
+              "id": "account_name",
+              "name": "account_name",
+              "value": "={{ $json['Account Name'] || $json.account_name }}",
+              "type": "string"
+            },
+            {
+              "id": "target_cpl",
+              "name": "target_cpl",
+              "value": "={{ $json['Target CPL'] || $json.target_cpl }}",
+              "type": "number"
+            },
+            {
+              "id": "weekly_budget",
+              "name": "weekly_budget",
+              "value": "={{ $json['Weekly Budget'] || $json.weekly_budget }}",
+              "type": "number"
+            },
+            {
+              "id": "manager_id",
+              "name": "manager_id",
+              "value": "={{ String($json['Manager ID'] || $json.manager_id).replace(/[^0-9]/g, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "website_url",
+              "name": "website_url",
+              "value": "={{ $json['Website URL'] || $json.website_url }}",
+              "type": "string"
+            },
+            {
+              "id": "client_wishes",
+              "name": "client_wishes",
+              "value": "={{ $json['Client Wishes'] || $json.client_wishes || 'Generate comprehensive campaign targeting potential customers in South Africa' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "builder-normalize-004",
+      "name": "Normalize Client Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [2000, 400]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website_url }}",
+        "prompt": "Extract the following information from this website:\n\n1. Business name\n2. Main services or products offered (list up to 5)\n3. Target audience/customer type\n4. Geographic areas served\n5. Key benefits or unique selling points\n6. Industry/sector\n7. Any pricing information mentioned\n\nProvide the information in clear, structured format."
+      },
+      "id": "builder-fetch-website-005",
+      "name": "Fetch & Analyze Website",
+      "type": "n8n-nodes-base.webFetch",
+      "typeVersion": 1,
+      "position": [2200, 400]
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Google Ads campaign architect specializing in lead generation for South African businesses.\n\nCLIENT INFORMATION:\nBusiness: {{ $('Normalize Client Data').item.json.account_name }}\nWebsite: {{ $('Normalize Client Data').item.json.website_url }}\nTarget CPL: ${{ $('Normalize Client Data').item.json.target_cpl }}\nWeekly Budget: ${{ $('Normalize Client Data').item.json.weekly_budget }}\nClient Wishes: {{ $('Normalize Client Data').item.json.client_wishes }}\n\nWEBSITE ANALYSIS:\n{{ $json }}\n\nYOUR TASK: Generate a complete Google Ads Search campaign structure.\n\nREQUIREMENTS:\n\n1. CAMPAIGN BASICS:\n   - Campaign name: \"[Business Name] - Lead Gen - Search\"\n   - Daily budget: {{ $('Normalize Client Data').item.json.weekly_budget / 7 }} (weekly budget / 7)\n   - Bidding: Target CPA set to {{ $('Normalize Client Data').item.json.target_cpl }}\n   - Network: Search only\n   - Locations: South Africa (or specific cities if mentioned in website/wishes)\n   - Language: English\n\n2. KEYWORDS (30-50 TRANSACTIONAL ONLY):\n   - Generate keywords based on services, location, and buying intent\n   - ONLY transactional keywords (hire, buy, service, company, agency, professional, near me, best, top, quote, price)\n   - Mix of EXACT and PHRASE match types\n   - Focus on South African context (include location modifiers)\n   - Examples:\n     * [marketing agency johannesburg] (EXACT)\n     * \"hire marketing company\" (PHRASE)\n     * [digital marketing services south africa] (EXACT)\n   \n3. NEGATIVE KEYWORDS (30-50):\n   - Informational queries: what is, how to, guide, tips, tutorial, free, learn, course, training\n   - Job seekers: job, jobs, career, careers, vacancy, hiring, employment, CV, resume\n   - DIY/self-service: diy, yourself, template, example, sample\n   - Competitors (if identifiable)\n   - Low-value: cheap, free, intern, student\n   \n4. AD GROUPS (5-10 maximum):\n   - Group keywords by service/product theme\n   - Each ad group should have 5-10 related keywords\n   - Names: \"[Service Name] - [Location if relevant]\"\n   - Examples:\n     * \"Digital Marketing Services - Johannesburg\"\n     * \"SEO Services - South Africa\"\n     * \"Social Media Management\"\n\n5. ADS (3 Responsive Search Ads per ad group):\n   For EACH ad group, generate 3 RSAs with:\n   - 15 headlines (max 30 chars each)\n     * Include business name\n     * Include service/benefit\n     * Include location\n     * Include CTAs\n     * Include USPs from website\n   - 4 descriptions (max 90 chars each)\n     * Expand on benefits\n     * Include pricing if available\n     * Include CTAs\n   - Final URL: {{ $('Normalize Client Data').item.json.website_url }}\n\n6. OUTPUT FORMAT (JSON):\n```json\n{\n  \"campaign\": {\n    \"name\": \"Campaign name here\",\n    \"daily_budget_micros\": 142857142857,\n    \"target_cpa_micros\": 500000000,\n    \"location\": \"South Africa\",\n    \"language\": \"en\"\n  },\n  \"negative_keywords\": [\n    {\"text\": \"keyword\", \"match_type\": \"BROAD\"},\n    ...\n  ],\n  \"ad_groups\": [\n    {\n      \"name\": \"Ad Group Name\",\n      \"keywords\": [\n        {\"text\": \"keyword\", \"match_type\": \"EXACT\"},\n        {\"text\": \"keyword phrase\", \"match_type\": \"PHRASE\"},\n        ...\n      ],\n      \"ads\": [\n        {\n          \"headlines\": [\n            \"Headline 1\",\n            \"Headline 2\",\n            ... (15 total)\n          ],\n          \"descriptions\": [\n            \"Description 1\",\n            \"Description 2\",\n            ... (4 total)\n          ],\n          \"final_url\": \"{{ $('Normalize Client Data').item.json.website_url }}\"\n        },\n        ... (3 ads total)\n      ]\n    },\n    ... (5-10 ad groups)\n  ]\n}\n```\n\nGENERATE THE COMPLETE CAMPAIGN STRUCTURE NOW."
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "builder-ai-generate-006",
+      "name": "AI Generate Campaign Structure",
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [2400, 400],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "z8ODK687wO6Fv66a",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI response and prepare for sheet output\nconst clientData = $('Normalize Client Data').item.json;\nconst aiResponse = $json;\n\nlet campaignStructure = {};\n\n// Extract campaign structure from AI response\nif (aiResponse.content && aiResponse.content.parts && aiResponse.content.parts[0]) {\n  const responseText = aiResponse.content.parts[0].text;\n  try {\n    // Try to parse JSON from response\n    const jsonMatch = responseText.match(/```json\\n([\\s\\S]+?)\\n```/) || responseText.match(/\\{[\\s\\S]+\\}/);\n    if (jsonMatch) {\n      campaignStructure = JSON.parse(jsonMatch[1] || jsonMatch[0]);\n    } else {\n      campaignStructure = JSON.parse(responseText);\n    }\n  } catch (e) {\n    console.error('Failed to parse AI response:', e);\n    throw new Error('AI did not return valid JSON structure');\n  }\n} else if (typeof aiResponse === 'object') {\n  campaignStructure = aiResponse;\n}\n\nconsole.log('Campaign structure:', JSON.stringify(campaignStructure, null, 2));\n\n// Create output rows for Google Sheets\nconst output = {\n  // Client info\n  account_id: clientData.account_id,\n  account_name: clientData.account_name,\n  manager_id: clientData.manager_id,\n  website_url: clientData.website_url,\n  target_cpl: clientData.target_cpl,\n  weekly_budget: clientData.weekly_budget,\n  \n  // Campaign structure (as JSON)\n  campaign_structure: JSON.stringify(campaignStructure),\n  \n  // Summary stats\n  num_ad_groups: campaignStructure.ad_groups?.length || 0,\n  num_keywords: campaignStructure.ad_groups?.reduce((sum, ag) => sum + (ag.keywords?.length || 0), 0) || 0,\n  num_negative_keywords: campaignStructure.negative_keywords?.length || 0,\n  num_ads: campaignStructure.ad_groups?.reduce((sum, ag) => sum + (ag.ads?.length || 0), 0) || 0,\n  \n  // Status\n  status: 'Draft',\n  created_date: new Date().toISOString(),\n  approved: 'No'\n};\n\nconsole.log('Summary:');\nconsole.log(`  Ad Groups: ${output.num_ad_groups}`);\nconsole.log(`  Keywords: ${output.num_keywords}`);\nconsole.log(`  Negative Keywords: ${output.num_negative_keywords}`);\nconsole.log(`  Ads: ${output.num_ads}`);\n\nreturn { json: output };"
+      },
+      "id": "builder-parse-007",
+      "name": "Parse Campaign Structure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 400]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Campaign Drafts",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "account_id": "={{ $json.account_id }}",
+            "account_name": "={{ $json.account_name }}",
+            "manager_id": "={{ $json.manager_id }}",
+            "website_url": "={{ $json.website_url }}",
+            "target_cpl": "={{ $json.target_cpl }}",
+            "weekly_budget": "={{ $json.weekly_budget }}",
+            "campaign_structure": "={{ $json.campaign_structure }}",
+            "num_ad_groups": "={{ $json.num_ad_groups }}",
+            "num_keywords": "={{ $json.num_keywords }}",
+            "num_negative_keywords": "={{ $json.num_negative_keywords }}",
+            "num_ads": "={{ $json.num_ads }}",
+            "status": "={{ $json.status }}",
+            "created_date": "={{ $json.created_date }}",
+            "approved": "={{ $json.approved }}",
+            "campaign_id": "",
+            "notes": ""
+          }
+        },
+        "options": {}
+      },
+      "id": "builder-write-sheet-008",
+      "name": "Write to Campaign Drafts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [2800, 400],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Read Client Config", "type": "main", "index": 0}]]
+    },
+    "Read Client Config": {
+      "main": [[{"node": "Filter Clients Needing Campaigns", "type": "main", "index": 0}]]
+    },
+    "Filter Clients Needing Campaigns": {
+      "main": [[{"node": "Normalize Client Data", "type": "main", "index": 0}]]
+    },
+    "Normalize Client Data": {
+      "main": [[{"node": "Fetch & Analyze Website", "type": "main", "index": 0}]]
+    },
+    "Fetch & Analyze Website": {
+      "main": [[{"node": "AI Generate Campaign Structure", "type": "main", "index": 0}]]
+    },
+    "AI Generate Campaign Structure": {
+      "main": [[{"node": "Parse Campaign Structure", "type": "main", "index": 0}]]
+    },
+    "Parse Campaign Structure": {
+      "main": [[{"node": "Write to Campaign Drafts Sheet", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "CAMPAIGN-BUILDER-V1",
+  "meta": {
+    "instanceId": "effc64e48969b17cedd1f53b2e717f8f253191706dc7648f0e4a97305561804b"
+  },
+  "tags": []
+}

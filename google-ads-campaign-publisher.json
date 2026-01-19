@@ -1,0 +1,545 @@
+{
+  "name": "Google Ads - Publish Campaigns",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "publish-trigger-001",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [1400, 500]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Campaign Drafts",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "id": "publish-read-drafts-002",
+      "name": "Read Campaign Drafts",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1600, 500],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter for approved campaigns only\nconst items = $input.all();\n\nconst approved = items.filter(item => {\n  const row = item.json;\n  const approvalStatus = String(row.approved || '').trim().toLowerCase();\n  const status = String(row.status || '').trim().toLowerCase();\n  \n  // Must be approved and not already published\n  if (approvalStatus === 'yes' && status !== 'published') {\n    console.log(`✓ Will publish campaign for ${row.account_name}`);\n    return true;\n  }\n  \n  console.log(`Skipping ${row.account_name}: approved=${approvalStatus}, status=${status}`);\n  return false;\n});\n\nconsole.log(`Found ${approved.length} campaigns ready to publish`);\nreturn approved;"
+      },
+      "id": "publish-filter-003",
+      "name": "Filter Approved Campaigns",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the campaign structure JSON\nconst row = $json;\n\nlet campaignStructure = {};\ntry {\n  campaignStructure = JSON.parse(row.campaign_structure);\n} catch (e) {\n  console.error('Failed to parse campaign_structure:', e);\n  throw new Error('Invalid campaign structure JSON');\n}\n\nconsole.log('Parsed campaign structure for:', row.account_name);\nconsole.log('Ad groups:', campaignStructure.ad_groups?.length);\n\nreturn {\n  json: {\n    ...row,\n    parsed_campaign: campaignStructure,\n    account_id_clean: String(row.account_id).replace(/-/g, '')\n  }\n};"
+      },
+      "id": "publish-parse-004",
+      "name": "Parse Campaign Structure",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2000, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $json.account_id_clean }}/campaigns:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.parsed_campaign.campaign.name,\n      status: 'ENABLED',\n      advertisingChannelType: 'SEARCH',\n      biddingStrategy: {\n        targetCpa: {\n          targetCpaMicros: $json.parsed_campaign.campaign.target_cpa_micros\n        }\n      },\n      campaignBudget: {\n        amountMicros: $json.parsed_campaign.campaign.daily_budget_micros,\n        deliveryMethod: 'STANDARD'\n      },\n      networkSettings: {\n        targetGoogleSearch: true,\n        targetSearchNetwork: false,\n        targetContentNetwork: false,\n        targetPartnerSearchNetwork: false\n      },\n      geoTargetTypeSetting: {\n        positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n      }\n    }\n  }]\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-campaign-005",
+      "name": "Create Campaign in Google Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract campaign ID from response and prepare for next step\nconst response = $json;\nconst previousData = $('Parse Campaign Structure').item.json;\n\nlet campaignId = '';\nif (response.results && response.results[0] && response.results[0].resourceName) {\n  // Extract campaign ID from resource name: customers/123/campaigns/456\n  const match = response.results[0].resourceName.match(/campaigns\\/(\\d+)/);\n  if (match) {\n    campaignId = match[1];\n  }\n}\n\nif (!campaignId) {\n  throw new Error('Failed to extract campaign ID from response');\n}\n\nconsole.log('Created campaign with ID:', campaignId);\n\nreturn {\n  json: {\n    ...previousData,\n    campaign_id: campaignId,\n    campaign_resource_name: response.results[0].resourceName\n  }\n};"
+      },
+      "id": "publish-extract-campaign-id-006",
+      "name": "Extract Campaign ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2400, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Set location targeting for South Africa\nconst data = $json;\nconst accountId = data.account_id_clean;\nconst campaignId = data.campaign_id;\n\n// South Africa location ID = 2710\nconst locationId = '2710';\n\nconst requestBody = {\n  operations: [{\n    create: {\n      campaign: `customers/${accountId}/campaigns/${campaignId}`,\n      location: {\n        geoTargetConstant: `geoTargetConstants/${locationId}`\n      }\n    }\n  }]\n};\n\nreturn {\n  json: {\n    ...data,\n    location_request: requestBody,\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${accountId}/campaignCriteria:mutate`\n  }\n};"
+      },
+      "id": "publish-prepare-location-007",
+      "name": "Prepare Location Targeting",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2600, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_endpoint }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.location_request) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-set-location-008",
+      "name": "Set Location Targeting",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2800, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create ad groups for each ad group in the structure\nconst previousData = $('Extract Campaign ID').item.json;\nconst adGroups = previousData.parsed_campaign.ad_groups || [];\n\nconsole.log(`Creating ${adGroups.length} ad groups`);\n\n// Return one item per ad group\nreturn adGroups.map((adGroup, index) => ({\n  json: {\n    ...previousData,\n    current_ad_group: adGroup,\n    ad_group_index: index\n  }\n}));"
+      },
+      "id": "publish-split-ad-groups-009",
+      "name": "Split into Ad Groups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3000, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $json.account_id_clean }}/adGroups:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.current_ad_group.name,\n      campaign: `customers/${$json.account_id_clean}/campaigns/${$json.campaign_id}`,\n      status: 'ENABLED',\n      type: 'SEARCH_STANDARD'\n    }\n  }]\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-ad-group-010",
+      "name": "Create Ad Group",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3200, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract ad group ID and prepare for keyword/ad creation\nconst response = $json;\nconst previousData = $('Split into Ad Groups').item.json;\n\nlet adGroupId = '';\nif (response.results && response.results[0] && response.results[0].resourceName) {\n  const match = response.results[0].resourceName.match(/adGroups\\/(\\d+)/);\n  if (match) {\n    adGroupId = match[1];\n  }\n}\n\nif (!adGroupId) {\n  throw new Error('Failed to extract ad group ID');\n}\n\nconsole.log('Created ad group:', previousData.current_ad_group.name, '- ID:', adGroupId);\n\nreturn {\n  json: {\n    ...previousData,\n    ad_group_id: adGroupId\n  }\n};"
+      },
+      "id": "publish-extract-ad-group-id-011",
+      "name": "Extract Ad Group ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3400, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create keywords for this ad group\nconst data = $json;\nconst keywords = data.current_ad_group.keywords || [];\n\nconst operations = keywords.map(kw => ({\n  create: {\n    adGroup: `customers/${data.account_id_clean}/adGroups/${data.ad_group_id}`,\n    status: 'ENABLED',\n    keyword: {\n      text: kw.text,\n      matchType: kw.match_type\n    }\n  }\n}));\n\nconsole.log(`Creating ${operations.length} keywords in ad group ${data.current_ad_group.name}`);\n\nreturn {\n  json: {\n    ...data,\n    keyword_operations: { operations },\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${data.account_id_clean}/adGroupCriteria:mutate`\n  }\n};"
+      },
+      "id": "publish-prepare-keywords-012",
+      "name": "Prepare Keywords",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [3600, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_endpoint }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.keyword_operations) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-keywords-013",
+      "name": "Create Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [3800, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create responsive search ads for this ad group\nconst previousData = $('Extract Ad Group ID').item.json;\nconst ads = previousData.current_ad_group.ads || [];\n\nconst operations = ads.map(ad => ({\n  create: {\n    adGroup: `customers/${previousData.account_id_clean}/adGroups/${previousData.ad_group_id}`,\n    status: 'ENABLED',\n    ad: {\n      responsiveSearchAd: {\n        headlines: ad.headlines.map(h => ({ text: h })),\n        descriptions: ad.descriptions.map(d => ({ text: d }))\n      },\n      finalUrls: [ad.final_url]\n    }\n  }\n}));\n\nconsole.log(`Creating ${operations.length} RSAs in ad group ${previousData.current_ad_group.name}`);\n\nreturn {\n  json: {\n    ...previousData,\n    ad_operations: { operations },\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${previousData.account_id_clean}/adGroupAds:mutate`\n  }\n};"
+      },
+      "id": "publish-prepare-ads-014",
+      "name": "Prepare Ads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4000, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_endpoint }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.ad_operations) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-ads-015",
+      "name": "Create Ads",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [4200, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "id": "publish-aggregate-016",
+      "name": "Aggregate Ad Group Results",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [4400, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get campaign data (from first ad group)\nconst aggregatedData = $json.data[0];\n\nreturn {\n  json: {\n    account_id: aggregatedData.account_id,\n    account_id_clean: aggregatedData.account_id_clean,\n    account_name: aggregatedData.account_name,\n    manager_id: aggregatedData.manager_id,\n    campaign_id: aggregatedData.campaign_id,\n    parsed_campaign: aggregatedData.parsed_campaign,\n    row_number: aggregatedData.row_number\n  }\n};"
+      },
+      "id": "publish-extract-campaign-data-017",
+      "name": "Extract Campaign Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4600, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create campaign-level negative keywords\nconst data = $json;\nconst negatives = data.parsed_campaign.negative_keywords || [];\n\nconst operations = negatives.map(neg => ({\n  create: {\n    campaign: `customers/${data.account_id_clean}/campaigns/${data.campaign_id}`,\n    keyword: {\n      text: neg.text,\n      matchType: neg.match_type\n    },\n    negative: true\n  }\n}));\n\nconsole.log(`Creating ${operations.length} campaign-level negative keywords`);\n\nreturn {\n  json: {\n    ...data,\n    negative_operations: { operations },\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${data.account_id_clean}/campaignCriteria:mutate`\n  }\n};"
+      },
+      "id": "publish-prepare-negatives-018",
+      "name": "Prepare Negative Keywords",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [4800, 500]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_endpoint }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.negative_operations) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-negatives-019",
+      "name": "Create Negative Keywords",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [5000, 500],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Campaign Drafts",
+          "mode": "list"
+        },
+        "columnToMatchOn": "account_id",
+        "valueToMatchOn": "={{ $json.account_id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "=Published",
+            "campaign_id": "={{ $json.campaign_id }}",
+            "published_date": "={{ $now.toFormat('yyyy-MM-dd HH:mm:ss') }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "publish-update-drafts-020",
+      "name": "Update Campaign Drafts Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [5200, 500],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1i1DnW3omAYZ02vqMC4WsuIk7yLze8gASccB7GEniYpU/edit",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Client Config",
+          "mode": "list"
+        },
+        "columnToMatchOn": "Account ID",
+        "valueToMatchOn": "={{ $json.account_id }}",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Campaign IDs": "={{ $json.campaign_id }}"
+          }
+        },
+        "options": {}
+      },
+      "id": "publish-update-config-021",
+      "name": "Update Client Config Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [5400, 500],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "jvLrl0t9LtRO7s2R",
+          "name": "Google Sheets account 2"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [[{"node": "Read Campaign Drafts", "type": "main", "index": 0}]]
+    },
+    "Read Campaign Drafts": {
+      "main": [[{"node": "Filter Approved Campaigns", "type": "main", "index": 0}]]
+    },
+    "Filter Approved Campaigns": {
+      "main": [[{"node": "Parse Campaign Structure", "type": "main", "index": 0}]]
+    },
+    "Parse Campaign Structure": {
+      "main": [[{"node": "Create Campaign in Google Ads", "type": "main", "index": 0}]]
+    },
+    "Create Campaign in Google Ads": {
+      "main": [[{"node": "Extract Campaign ID", "type": "main", "index": 0}]]
+    },
+    "Extract Campaign ID": {
+      "main": [[{"node": "Prepare Location Targeting", "type": "main", "index": 0}]]
+    },
+    "Prepare Location Targeting": {
+      "main": [[{"node": "Set Location Targeting", "type": "main", "index": 0}]]
+    },
+    "Set Location Targeting": {
+      "main": [[{"node": "Split into Ad Groups", "type": "main", "index": 0}]]
+    },
+    "Split into Ad Groups": {
+      "main": [[{"node": "Create Ad Group", "type": "main", "index": 0}]]
+    },
+    "Create Ad Group": {
+      "main": [[{"node": "Extract Ad Group ID", "type": "main", "index": 0}]]
+    },
+    "Extract Ad Group ID": {
+      "main": [[{"node": "Prepare Keywords", "type": "main", "index": 0}, {"node": "Prepare Ads", "type": "main", "index": 0}]]
+    },
+    "Prepare Keywords": {
+      "main": [[{"node": "Create Keywords", "type": "main", "index": 0}]]
+    },
+    "Create Keywords": {
+      "main": [[{"node": "Aggregate Ad Group Results", "type": "main", "index": 0}]]
+    },
+    "Prepare Ads": {
+      "main": [[{"node": "Create Ads", "type": "main", "index": 0}]]
+    },
+    "Create Ads": {
+      "main": [[{"node": "Aggregate Ad Group Results", "type": "main", "index": 0}]]
+    },
+    "Aggregate Ad Group Results": {
+      "main": [[{"node": "Extract Campaign Data", "type": "main", "index": 0}]]
+    },
+    "Extract Campaign Data": {
+      "main": [[{"node": "Prepare Negative Keywords", "type": "main", "index": 0}]]
+    },
+    "Prepare Negative Keywords": {
+      "main": [[{"node": "Create Negative Keywords", "type": "main", "index": 0}]]
+    },
+    "Create Negative Keywords": {
+      "main": [[{"node": "Update Campaign Drafts Sheet", "type": "main", "index": 0}]]
+    },
+    "Update Campaign Drafts Sheet": {
+      "main": [[{"node": "Update Client Config Sheet", "type": "main", "index": 0}]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "CAMPAIGN-PUBLISHER-V1",
+  "meta": {
+    "instanceId": "effc64e48969b17cedd1f53b2e717f8f253191706dc7648f0e4a97305561804b"
+  },
+  "tags": []
+}
