@@ -37,7 +37,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Filter clients that need campaign building (no Campaign IDs yet, or explicitly marked)\nconst items = $input.all();\n\nconst needsCampaigns = items.filter(item => {\n  const row = item.json;\n  \n  // Must have website URL\n  if (!row['Website URL'] && !row.website_url) {\n    console.log(`Skipping ${row['Account Name']}: No website URL`);\n    return false;\n  }\n  \n  // Skip if already has campaign IDs (unless Build Campaign = Yes)\n  const campaignIds = row['Campaign IDs'] || row.campaign_ids || '';\n  const buildFlag = String(row['Build Campaign'] || row.build_campaign || '').toLowerCase();\n  \n  if (campaignIds && campaignIds.trim() !== '' && buildFlag !== 'yes') {\n    console.log(`Skipping ${row['Account Name']}: Already has campaigns`);\n    return false;\n  }\n  \n  console.log(`✓ Will build campaign for ${row['Account Name']}`);\n  return true;\n});\n\nconsole.log(`Found ${needsCampaigns.length} clients needing campaign builds`);\nreturn needsCampaigns;"
+        "jsCode": "// Filter clients that need campaign building (no Campaign IDs yet, or explicitly marked)\nconst items = $input.all();\n\nconst needsCampaigns = items.filter(item => {\n  const row = item.json;\n  \n  // Must have website URL (check multiple possible column names)\n  const websiteUrl = row['Website URL'] || row['URL'] || row.website_url || row.url || '';\n  if (!websiteUrl || websiteUrl.trim() === '') {\n    console.log(`Skipping ${row['Account Name'] || row.account_name || 'Unknown'}: No website URL`);\n    return false;\n  }\n  \n  // Must have account name\n  const accountName = row['Account Name'] || row.account_name || '';\n  if (!accountName || accountName.trim() === '') {\n    console.log(`Skipping row: No account name`);\n    return false;\n  }\n  \n  // Skip if already has campaign IDs (unless Build Campaign = Yes)\n  const campaignIds = row['Campaign IDs'] || row.campaign_ids || '';\n  const buildFlag = String(row['Build Campaign'] || row.build_campaign || '').toLowerCase();\n  \n  if (campaignIds && campaignIds.trim() !== '' && buildFlag !== 'yes') {\n    console.log(`Skipping ${accountName}: Already has campaigns`);\n    return false;\n  }\n  \n  console.log(`✓ Will build campaign for ${accountName}`);\n  return true;\n});\n\nconsole.log(`Found ${needsCampaigns.length} clients needing campaign builds`);\nreturn needsCampaigns;"
       },
       "id": "builder-filter-003",
       "name": "Filter Clients Needing Campaigns",
@@ -82,13 +82,13 @@
             {
               "id": "website_url",
               "name": "website_url",
-              "value": "={{ $json['Website URL'] || $json.website_url }}",
+              "value": "={{ $json['Website URL'] || $json['URL'] || $json.website_url || $json.url }}",
               "type": "string"
             },
             {
               "id": "client_wishes",
               "name": "client_wishes",
-              "value": "={{ $json['Client Wishes'] || $json.client_wishes || 'Generate comprehensive campaign targeting potential customers in South Africa' }}",
+              "value": "={{ $json['Client Wishes'] || $json['Context'] || $json.client_wishes || $json.context || 'Generate comprehensive campaign targeting potential customers in South Africa' }}",
               "type": "string"
             }
           ]
