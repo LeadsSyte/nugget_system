@@ -88,7 +88,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({  operations: [{    create: {      name: $json.parsed_campaign.campaign.name + ' Budget',      amountMicros: String($json.parsed_campaign.campaign.daily_budget_micros),      deliveryMethod: 'STANDARD',      explicitlyShared: false    }  }]}) }}",
+        "jsonBody": "={{  {    operations: [{      create: {        name: $json.parsed_campaign.campaign.name + ' Budget',        amountMicros: String($json.parsed_campaign.campaign.daily_budget_micros),        deliveryMethod: 'STANDARD',        explicitlyShared: false      }    }]  } }}",
         "options": {
           "response": {
             "response": {
@@ -146,7 +146,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.parsed_campaign.campaign.name,\n      status: 'ENABLED',\n      advertisingChannelType: 'SEARCH',\n      campaignBudget: $json.budget_resource_name,\n      biddingStrategyType: 'TARGET_CPA',\n      targetCpa: {\n        targetCpaMicros: $json.parsed_campaign.campaign.target_cpa_micros\n      },\n      networkSettings: {\n        targetGoogleSearch: true,\n        targetSearchNetwork: false,\n        targetContentNetwork: false,\n        targetPartnerSearchNetwork: false\n      },\n      geoTargetTypeSetting: {\n        positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n      }\n    }\n  }]\n}) }}",
+        "jsonBody": "={{  {\n    operations: [{\n      create: {\n        name: $json.parsed_campaign.campaign.name,\n        status: 'ENABLED',\n        advertisingChannelType: 'SEARCH',\n        campaignBudget: $json.budget_resource_name,\n        biddingStrategyType: 'TARGET_CPA',\n        targetCpa: {\n          targetCpaMicros: $json.parsed_campaign.campaign.target_cpa_micros\n        },\n        networkSettings: {\n          targetGoogleSearch: true,\n          targetSearchNetwork: false,\n          targetContentNetwork: false,\n          targetPartnerSearchNetwork: false\n        },\n        geoTargetTypeSetting: {\n          positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n        }\n      }\n    }]\n  } }}",
         "options": {
           "response": {
             "response": {
@@ -217,7 +217,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.location_request) }}",
+        "jsonBody": "={{ $json.location_request }}",
         "options": {
           "response": {
             "response": {
@@ -275,7 +275,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.current_ad_group.name,\n      campaign: `customers/${$json.account_id_clean}/campaigns/${$json.campaign_id}`,\n      status: 'ENABLED',\n      type: 'SEARCH_STANDARD'\n    }\n  }]\n}) }}",
+        "jsonBody": "={{  {\n    operations: [{\n      create: {\n        name: $json.current_ad_group.name,\n        campaign: `customers/${$json.account_id_clean}/campaigns/${$json.campaign_id}`,\n        status: 'ENABLED',\n        type: 'SEARCH_STANDARD'\n      }\n    }]\n  } }}",
         "options": {
           "response": {
             "response": {
@@ -346,7 +346,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.keyword_operations) }}",
+        "jsonBody": "={{ $json.keyword_operations }}",
         "options": {
           "response": {
             "response": {
@@ -404,7 +404,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.ad_operations) }}",
+        "jsonBody": "={{ $json.ad_operations }}",
         "options": {
           "response": {
             "response": {
@@ -489,7 +489,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.negative_operations) }}",
+        "jsonBody": "={{ $json.negative_operations }}",
         "options": {
           "response": {
             "response": {
