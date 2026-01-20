@@ -88,7 +88,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({  operations: [{    create: {      name: $json.parsed_campaign.campaign.name + ' Budget',      amountMicros: $json.parsed_campaign.campaign.daily_budget_micros,      deliveryMethod: 'STANDARD'    }  }]}) }}",
+        "jsonBody": "={{ JSON.stringify({  operations: [{    create: {      name: $json.parsed_campaign.campaign.name + ' Budget',      amountMicros: String($json.parsed_campaign.campaign.daily_budget_micros),      deliveryMethod: 'STANDARD',      explicitlyShared: false    }  }]}) }}",
         "options": {
           "response": {
             "response": {
