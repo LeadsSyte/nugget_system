@@ -444,7 +444,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get campaign data (from first ad group)\nconst aggregatedData = $json.data[0];\n\nreturn {\n  json: {\n    account_id: aggregatedData.account_id,\n    account_id_clean: aggregatedData.account_id_clean,\n    account_name: aggregatedData.account_name,\n    manager_id: aggregatedData.manager_id,\n    campaign_id: aggregatedData.campaign_id,\n    parsed_campaign: aggregatedData.parsed_campaign,\n    row_number: aggregatedData.row_number\n  }\n};"
+        "jsCode": "// Get campaign data from aggregated results and original parsed campaign\nconst aggregatedData = $json.data[0];\n\n// Get the original parsed campaign structure from the Parse Campaign Structure node\nconst parsedCampaign = $('Parse Campaign Structure').item.json.parsed_campaign;\n\nreturn {\n  json: {\n    account_id: aggregatedData.account_id,\n    account_id_clean: aggregatedData.account_id_clean,\n    account_name: aggregatedData.account_name,\n    manager_id: aggregatedData.manager_id,\n    campaign_id: aggregatedData.campaign_id,\n    parsed_campaign: parsedCampaign,\n    row_number: aggregatedData.row_number\n  }\n};"
       },
       "id": "publish-extract-campaign-data-017",
       "name": "Extract Campaign Data",
