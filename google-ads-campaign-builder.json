@@ -103,14 +103,23 @@
     },
     {
       "parameters": {
+        "method": "GET",
         "url": "={{ $json.website_url }}",
-        "prompt": "Extract the following information from this website:\n\n1. Business name\n2. Main services or products offered (list up to 5)\n3. Target audience/customer type\n4. Geographic areas served\n5. Key benefits or unique selling points\n6. Industry/sector\n7. Any pricing information mentioned\n\nProvide the information in clear, structured format."
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
       },
       "id": "builder-fetch-website-005",
-      "name": "Fetch & Analyze Website",
-      "type": "n8n-nodes-base.webFetch",
-      "typeVersion": 1,
-      "position": [2200, 400]
+      "name": "Fetch Website Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2200, 400],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -122,7 +131,7 @@
         "messages": {
           "values": [
             {
-              "content": "=You are a Google Ads campaign architect specializing in lead generation for South African businesses.\n\nCLIENT INFORMATION:\nBusiness: {{ $('Normalize Client Data').item.json.account_name }}\nWebsite: {{ $('Normalize Client Data').item.json.website_url }}\nTarget CPL: ${{ $('Normalize Client Data').item.json.target_cpl }}\nWeekly Budget: ${{ $('Normalize Client Data').item.json.weekly_budget }}\nClient Wishes: {{ $('Normalize Client Data').item.json.client_wishes }}\n\nWEBSITE ANALYSIS:\n{{ $json }}\n\nYOUR TASK: Generate a complete Google Ads Search campaign structure.\n\nREQUIREMENTS:\n\n1. CAMPAIGN BASICS:\n   - Campaign name: \"[Business Name] - Lead Gen - Search\"\n   - Daily budget: {{ $('Normalize Client Data').item.json.weekly_budget / 7 }} (weekly budget / 7)\n   - Bidding: Target CPA set to {{ $('Normalize Client Data').item.json.target_cpl }}\n   - Network: Search only\n   - Locations: South Africa (or specific cities if mentioned in website/wishes)\n   - Language: English\n\n2. KEYWORDS (30-50 TRANSACTIONAL ONLY):\n   - Generate keywords based on services, location, and buying intent\n   - ONLY transactional keywords (hire, buy, service, company, agency, professional, near me, best, top, quote, price)\n   - Mix of EXACT and PHRASE match types\n   - Focus on South African context (include location modifiers)\n   - Examples:\n     * [marketing agency johannesburg] (EXACT)\n     * \"hire marketing company\" (PHRASE)\n     * [digital marketing services south africa] (EXACT)\n   \n3. NEGATIVE KEYWORDS (30-50):\n   - Informational queries: what is, how to, guide, tips, tutorial, free, learn, course, training\n   - Job seekers: job, jobs, career, careers, vacancy, hiring, employment, CV, resume\n   - DIY/self-service: diy, yourself, template, example, sample\n   - Competitors (if identifiable)\n   - Low-value: cheap, free, intern, student\n   \n4. AD GROUPS (5-10 maximum):\n   - Group keywords by service/product theme\n   - Each ad group should have 5-10 related keywords\n   - Names: \"[Service Name] - [Location if relevant]\"\n   - Examples:\n     * \"Digital Marketing Services - Johannesburg\"\n     * \"SEO Services - South Africa\"\n     * \"Social Media Management\"\n\n5. ADS (3 Responsive Search Ads per ad group):\n   For EACH ad group, generate 3 RSAs with:\n   - 15 headlines (max 30 chars each)\n     * Include business name\n     * Include service/benefit\n     * Include location\n     * Include CTAs\n     * Include USPs from website\n   - 4 descriptions (max 90 chars each)\n     * Expand on benefits\n     * Include pricing if available\n     * Include CTAs\n   - Final URL: {{ $('Normalize Client Data').item.json.website_url }}\n\n6. OUTPUT FORMAT (JSON):\n```json\n{\n  \"campaign\": {\n    \"name\": \"Campaign name here\",\n    \"daily_budget_micros\": 142857142857,\n    \"target_cpa_micros\": 500000000,\n    \"location\": \"South Africa\",\n    \"language\": \"en\"\n  },\n  \"negative_keywords\": [\n    {\"text\": \"keyword\", \"match_type\": \"BROAD\"},\n    ...\n  ],\n  \"ad_groups\": [\n    {\n      \"name\": \"Ad Group Name\",\n      \"keywords\": [\n        {\"text\": \"keyword\", \"match_type\": \"EXACT\"},\n        {\"text\": \"keyword phrase\", \"match_type\": \"PHRASE\"},\n        ...\n      ],\n      \"ads\": [\n        {\n          \"headlines\": [\n            \"Headline 1\",\n            \"Headline 2\",\n            ... (15 total)\n          ],\n          \"descriptions\": [\n            \"Description 1\",\n            \"Description 2\",\n            ... (4 total)\n          ],\n          \"final_url\": \"{{ $('Normalize Client Data').item.json.website_url }}\"\n        },\n        ... (3 ads total)\n      ]\n    },\n    ... (5-10 ad groups)\n  ]\n}\n```\n\nGENERATE THE COMPLETE CAMPAIGN STRUCTURE NOW."
+              "content": "=You are a Google Ads campaign architect specializing in lead generation for South African businesses.\n\nCLIENT INFORMATION:\nBusiness: {{ $('Normalize Client Data').item.json.account_name }}\nWebsite: {{ $('Normalize Client Data').item.json.website_url }}\nTarget CPL: ${{ $('Normalize Client Data').item.json.target_cpl }}\nWeekly Budget: ${{ $('Normalize Client Data').item.json.weekly_budget }}\nClient Wishes: {{ $('Normalize Client Data').item.json.client_wishes }}\n\nWEBSITE HTML (analyze to understand the business):\n{{ $json.data || $json }}\n\nFIRST: Analyze the website HTML to extract:\n1. Main services/products offered\n2. Target audience\n3. Geographic areas served\n4. Key benefits/USPs\n5. Industry/sector\n\nTHEN: Generate a complete Google Ads Search campaign structure.\n\nREQUIREMENTS:\n\n1. CAMPAIGN BASICS:\n   - Campaign name: \"[Business Name] - Lead Gen - Search\"\n   - Daily budget: {{ $('Normalize Client Data').item.json.weekly_budget / 7 }} (weekly budget / 7)\n   - Bidding: Target CPA set to {{ $('Normalize Client Data').item.json.target_cpl }}\n   - Network: Search only\n   - Locations: South Africa (or specific cities if mentioned in website/wishes)\n   - Language: English\n\n2. KEYWORDS (30-50 TRANSACTIONAL ONLY):\n   - Generate keywords based on services, location, and buying intent\n   - ONLY transactional keywords (hire, buy, service, company, agency, professional, near me, best, top, quote, price)\n   - Mix of EXACT and PHRASE match types\n   - Focus on South African context (include location modifiers)\n   - Examples:\n     * [marketing agency johannesburg] (EXACT)\n     * \"hire marketing company\" (PHRASE)\n     * [digital marketing services south africa] (EXACT)\n   \n3. NEGATIVE KEYWORDS (30-50):\n   - Informational queries: what is, how to, guide, tips, tutorial, free, learn, course, training\n   - Job seekers: job, jobs, career, careers, vacancy, hiring, employment, CV, resume\n   - DIY/self-service: diy, yourself, template, example, sample\n   - Competitors (if identifiable)\n   - Low-value: cheap, free, intern, student\n   \n4. AD GROUPS (5-10 maximum):\n   - Group keywords by service/product theme\n   - Each ad group should have 5-10 related keywords\n   - Names: \"[Service Name] - [Location if relevant]\"\n   - Examples:\n     * \"Digital Marketing Services - Johannesburg\"\n     * \"SEO Services - South Africa\"\n     * \"Social Media Management\"\n\n5. ADS (3 Responsive Search Ads per ad group):\n   For EACH ad group, generate 3 RSAs with:\n   - 15 headlines (max 30 chars each)\n     * Include business name\n     * Include service/benefit\n     * Include location\n     * Include CTAs\n     * Include USPs from website\n   - 4 descriptions (max 90 chars each)\n     * Expand on benefits\n     * Include pricing if available\n     * Include CTAs\n   - Final URL: {{ $('Normalize Client Data').item.json.website_url }}\n\n6. OUTPUT FORMAT (JSON):\n```json\n{\n  \"campaign\": {\n    \"name\": \"Campaign name here\",\n    \"daily_budget_micros\": 142857142857,\n    \"target_cpa_micros\": 500000000,\n    \"location\": \"South Africa\",\n    \"language\": \"en\"\n  },\n  \"negative_keywords\": [\n    {\"text\": \"keyword\", \"match_type\": \"BROAD\"},\n    ...\n  ],\n  \"ad_groups\": [\n    {\n      \"name\": \"Ad Group Name\",\n      \"keywords\": [\n        {\"text\": \"keyword\", \"match_type\": \"EXACT\"},\n        {\"text\": \"keyword phrase\", \"match_type\": \"PHRASE\"},\n        ...\n      ],\n      \"ads\": [\n        {\n          \"headlines\": [\n            \"Headline 1\",\n            \"Headline 2\",\n            ... (15 total)\n          ],\n          \"descriptions\": [\n            \"Description 1\",\n            \"Description 2\",\n            ... (4 total)\n          ],\n          \"final_url\": \"{{ $('Normalize Client Data').item.json.website_url }}\"\n        },\n        ... (3 ads total)\n      ]\n    },\n    ... (5-10 ad groups)\n  ]\n}\n```\n\nGENERATE THE COMPLETE CAMPAIGN STRUCTURE NOW."
             }
           ]
         },
@@ -211,9 +220,9 @@
       "main": [[{"node": "Normalize Client Data", "type": "main", "index": 0}]]
     },
     "Normalize Client Data": {
-      "main": [[{"node": "Fetch & Analyze Website", "type": "main", "index": 0}]]
+      "main": [[{"node": "Fetch Website Content", "type": "main", "index": 0}]]
     },
-    "Fetch & Analyze Website": {
+    "Fetch Website Content": {
       "main": [[{"node": "AI Generate Campaign Structure", "type": "main", "index": 0}]]
     },
     "AI Generate Campaign Structure": {
