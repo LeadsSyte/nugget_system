@@ -7,7 +7,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [1400, 500]
+      "position": [
+        1400,
+        500
+      ]
     },
     {
       "parameters": {
@@ -27,7 +30,10 @@
       "name": "Read Campaign Drafts",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [1600, 500],
+      "position": [
+        1600,
+        500
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "jvLrl0t9LtRO7s2R",
@@ -43,7 +49,10 @@
       "name": "Filter Approved Campaigns",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1800, 500]
+      "position": [
+        1800,
+        500
+      ]
     },
     {
       "parameters": {
@@ -53,7 +62,68 @@
       "name": "Parse Campaign Structure",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2000, 500]
+      "position": [
+        2000,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://googleads.googleapis.com/v22/customers/{{ $json.account_id_clean }}/campaignBudgets:mutate",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleAdsOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "login-customer-id",
+              "value": "={{ $json.manager_id }}"
+            },
+            {
+              "name": "developer-token",
+              "value": "IMRCe_tYWhkk3wL2t55A_A"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({  operations: [{    create: {      name: $json.parsed_campaign.campaign.name + ' Budget',      amountMicros: $json.parsed_campaign.campaign.daily_budget_micros,      deliveryMethod: 'STANDARD'    }  }]}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "publish-create-budget-004b",
+      "name": "Create Campaign Budget",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2100,
+        500
+      ],
+      "credentials": {
+        "googleAdsOAuth2Api": {
+          "id": "HPj2G78lODWdoGU3",
+          "name": "Google Ads account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract budget resource name from response\nconst response = $json;\nconst previousData = $('Parse Campaign Structure').item.json;\n\nlet budgetResourceName = '';\nif (response.results && response.results[0] && response.results[0].resourceName) {\n  budgetResourceName = response.results[0].resourceName;\n}\n\nif (!budgetResourceName) {\n  throw new Error('Failed to extract budget resource name from response');\n}\n\nconsole.log('Created budget:', budgetResourceName);\n\nreturn {\n  json: {\n    ...previousData,\n    budget_resource_name: budgetResourceName\n  }\n};"
+      },
+      "id": "publish-extract-budget-004c",
+      "name": "Extract Budget Resource Name",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2150,
+        500
+      ]
     },
     {
       "parameters": {
@@ -76,7 +146,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.parsed_campaign.campaign.name,\n      status: 'ENABLED',\n      advertisingChannelType: 'SEARCH',\n      biddingStrategy: {\n        targetCpa: {\n          targetCpaMicros: $json.parsed_campaign.campaign.target_cpa_micros\n        }\n      },\n      campaignBudget: {\n        amountMicros: $json.parsed_campaign.campaign.daily_budget_micros,\n        deliveryMethod: 'STANDARD'\n      },\n      networkSettings: {\n        targetGoogleSearch: true,\n        targetSearchNetwork: false,\n        targetContentNetwork: false,\n        targetPartnerSearchNetwork: false\n      },\n      geoTargetTypeSetting: {\n        positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n      }\n    }\n  }]\n}) }}",
+        "jsonBody": "={{ JSON.stringify({\n  operations: [{\n    create: {\n      name: $json.parsed_campaign.campaign.name,\n      status: 'ENABLED',\n      advertisingChannelType: 'SEARCH',\n      campaignBudget: $json.budget_resource_name,\n      biddingStrategyType: 'TARGET_CPA',\n      targetCpa: {\n        targetCpaMicros: $json.parsed_campaign.campaign.target_cpa_micros\n      },\n      networkSettings: {\n        targetGoogleSearch: true,\n        targetSearchNetwork: false,\n        targetContentNetwork: false,\n        targetPartnerSearchNetwork: false\n      },\n      geoTargetTypeSetting: {\n        positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n      }\n    }\n  }]\n}) }}",
         "options": {
           "response": {
             "response": {
@@ -89,7 +159,10 @@
       "name": "Create Campaign in Google Ads",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2200, 500],
+      "position": [
+        2200,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -105,7 +178,10 @@
       "name": "Extract Campaign ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2400, 500]
+      "position": [
+        2400,
+        500
+      ]
     },
     {
       "parameters": {
@@ -115,7 +191,10 @@
       "name": "Prepare Location Targeting",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [2600, 500]
+      "position": [
+        2600,
+        500
+      ]
     },
     {
       "parameters": {
@@ -151,7 +230,10 @@
       "name": "Set Location Targeting",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [2800, 500],
+      "position": [
+        2800,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -167,7 +249,10 @@
       "name": "Split into Ad Groups",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3000, 500]
+      "position": [
+        3000,
+        500
+      ]
     },
     {
       "parameters": {
@@ -203,7 +288,10 @@
       "name": "Create Ad Group",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3200, 500],
+      "position": [
+        3200,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -219,7 +307,10 @@
       "name": "Extract Ad Group ID",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3400, 500]
+      "position": [
+        3400,
+        500
+      ]
     },
     {
       "parameters": {
@@ -229,7 +320,10 @@
       "name": "Prepare Keywords",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [3600, 500]
+      "position": [
+        3600,
+        500
+      ]
     },
     {
       "parameters": {
@@ -265,7 +359,10 @@
       "name": "Create Keywords",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [3800, 500],
+      "position": [
+        3800,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -281,7 +378,10 @@
       "name": "Prepare Ads",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4000, 500]
+      "position": [
+        4000,
+        500
+      ]
     },
     {
       "parameters": {
@@ -317,7 +417,10 @@
       "name": "Create Ads",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [4200, 500],
+      "position": [
+        4200,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -334,7 +437,10 @@
       "name": "Aggregate Ad Group Results",
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
-      "position": [4400, 500]
+      "position": [
+        4400,
+        500
+      ]
     },
     {
       "parameters": {
@@ -344,7 +450,10 @@
       "name": "Extract Campaign Data",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4600, 500]
+      "position": [
+        4600,
+        500
+      ]
     },
     {
       "parameters": {
@@ -354,7 +463,10 @@
       "name": "Prepare Negative Keywords",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [4800, 500]
+      "position": [
+        4800,
+        500
+      ]
     },
     {
       "parameters": {
@@ -390,7 +502,10 @@
       "name": "Create Negative Keywords",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [5000, 500],
+      "position": [
+        5000,
+        500
+      ],
       "credentials": {
         "googleAdsOAuth2Api": {
           "id": "HPj2G78lODWdoGU3",
@@ -427,7 +542,10 @@
       "name": "Update Campaign Drafts Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [5200, 500],
+      "position": [
+        5200,
+        500
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "jvLrl0t9LtRO7s2R",
@@ -462,7 +580,10 @@
       "name": "Update Client Config Sheet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4,
-      "position": [5400, 500],
+      "position": [
+        5400,
+        500
+      ],
       "credentials": {
         "googleSheetsOAuth2Api": {
           "id": "jvLrl0t9LtRO7s2R",
@@ -473,64 +594,251 @@
   ],
   "connections": {
     "Manual Trigger": {
-      "main": [[{"node": "Read Campaign Drafts", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Read Campaign Drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Read Campaign Drafts": {
-      "main": [[{"node": "Filter Approved Campaigns", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Filter Approved Campaigns",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Filter Approved Campaigns": {
-      "main": [[{"node": "Parse Campaign Structure", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Parse Campaign Structure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse Campaign Structure": {
-      "main": [[{"node": "Create Campaign in Google Ads", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create Campaign Budget",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Campaign in Google Ads": {
-      "main": [[{"node": "Extract Campaign ID", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extract Campaign ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Campaign ID": {
-      "main": [[{"node": "Prepare Location Targeting", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Prepare Location Targeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Location Targeting": {
-      "main": [[{"node": "Set Location Targeting", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Set Location Targeting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Set Location Targeting": {
-      "main": [[{"node": "Split into Ad Groups", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Split into Ad Groups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Split into Ad Groups": {
-      "main": [[{"node": "Create Ad Group", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create Ad Group",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Ad Group": {
-      "main": [[{"node": "Extract Ad Group ID", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extract Ad Group ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Ad Group ID": {
-      "main": [[{"node": "Prepare Keywords", "type": "main", "index": 0}, {"node": "Prepare Ads", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Prepare Keywords",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Keywords": {
-      "main": [[{"node": "Create Keywords", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Keywords": {
-      "main": [[{"node": "Aggregate Ad Group Results", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Ad Group Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Ads": {
-      "main": [[{"node": "Create Ads", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Ads": {
-      "main": [[{"node": "Aggregate Ad Group Results", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Aggregate Ad Group Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Aggregate Ad Group Results": {
-      "main": [[{"node": "Extract Campaign Data", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Extract Campaign Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Extract Campaign Data": {
-      "main": [[{"node": "Prepare Negative Keywords", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Prepare Negative Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Prepare Negative Keywords": {
-      "main": [[{"node": "Create Negative Keywords", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Create Negative Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Create Negative Keywords": {
-      "main": [[{"node": "Update Campaign Drafts Sheet", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Update Campaign Drafts Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Update Campaign Drafts Sheet": {
-      "main": [[{"node": "Update Client Config Sheet", "type": "main", "index": 0}]]
+      "main": [
+        [
+          {
+            "node": "Update Client Config Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Campaign Budget": {
+      "main": [
+        [
+          {
+            "node": "Extract Budget Resource Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Budget Resource Name": {
+      "main": [
+        [
+          {
+            "node": "Create Campaign in Google Ads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
