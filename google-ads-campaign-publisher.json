@@ -88,7 +88,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{  {    operations: [{      create: {        name: $json.parsed_campaign.campaign.name + ' Budget',        amountMicros: String($json.parsed_campaign.campaign.daily_budget_micros),        deliveryMethod: 'STANDARD',        explicitlyShared: false      }    }]  } }}",
+        "jsonBody": "={{  {    operations: [{      create: {        name: $json.parsed_campaign.campaign.name + ' Budget',        amountMicros: String(Math.round($json.parsed_campaign.campaign.daily_budget_micros / 10000) * 10000),        deliveryMethod: 'STANDARD',        explicitlyShared: false      }    }]  } }}",
         "options": {
           "response": {
             "response": {
