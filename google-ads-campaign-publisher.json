@@ -146,7 +146,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{  {\n    operations: [{\n      create: {\n        name: $json.parsed_campaign.campaign.name,\n        status: 'ENABLED',\n        advertisingChannelType: 'SEARCH',\n        campaignBudget: $json.budget_resource_name,\n        biddingStrategyType: 'TARGET_CPA',\n        targetCpaMicros: String($json.parsed_campaign.campaign.target_cpa_micros),\n        networkSettings: {\n          targetGoogleSearch: true,\n          targetSearchNetwork: false,\n          targetContentNetwork: false,\n          targetPartnerSearchNetwork: false\n        },\n        geoTargetTypeSetting: {\n          positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n        },\n        containsEuPoliticalAdvertising: false\n      }\n    }]\n  } }}",
+        "jsonBody": "={{  {\n    operations: [{\n      create: {\n        name: $json.parsed_campaign.campaign.name,\n        status: 'ENABLED',\n        advertisingChannelType: 'SEARCH',\n        campaignBudget: $json.budget_resource_name,\n        targetCpa: {\n          targetCpaMicros: String($json.parsed_campaign.campaign.target_cpa_micros)\n        },\n        networkSettings: {\n          targetGoogleSearch: true,\n          targetSearchNetwork: false,\n          targetContentNetwork: false,\n          targetPartnerSearchNetwork: false\n        },\n        geoTargetTypeSetting: {\n          positiveGeoTargetType: 'PRESENCE_OR_INTEREST'\n        },\n        containsEuPoliticalAdvertising: 'DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING'\n      }\n    }]\n  } }}",
         "options": {
           "response": {
             "response": {
