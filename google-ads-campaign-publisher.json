@@ -678,7 +678,7 @@
       "main": [
         [
           {
-            "node": "Prepare Location Targeting",
+            "node": "Prepare Negative Keywords",
             "type": "main",
             "index": 0
           }
@@ -700,18 +700,7 @@
       "main": [
         [
           {
-            "node": "Restore Campaign Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Restore Campaign Data": {
-      "main": [
-        [
-          {
-            "node": "Prepare Negative Keywords",
+            "node": "Split into Ad Groups",
             "type": "main",
             "index": 0
           }
@@ -848,7 +837,7 @@
       "main": [
         [
           {
-            "node": "Split into Ad Groups",
+            "node": "Prepare Location Targeting",
             "type": "main",
             "index": 0
           }
