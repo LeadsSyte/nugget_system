@@ -243,7 +243,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Restore campaign data after location targeting HTTP request\n// HTTP requests replace input data with response, so we need to retrieve original data\nconst originalData = $('Prepare Location Targeting').item.json;\n\nconsole.log('Restoring campaign data after location targeting');\nconsole.log('Has parsed_campaign:', !!originalData.parsed_campaign);\n\nif (!originalData.parsed_campaign) {\n  throw new Error('parsed_campaign not found in Prepare Location Targeting node');\n}\n\nreturn {\n  json: originalData\n};"
+        "jsCode": "// Restore campaign data after location targeting HTTP request\n// HTTP requests replace input data with response, so we need to retrieve original data\n// Get from Extract Campaign ID node (before any HTTP requests)\nconst originalData = $('Extract Campaign ID').item.json;\n\nconsole.log('Restoring campaign data after location targeting');\nconsole.log('Has parsed_campaign:', !!originalData.parsed_campaign);\n\nif (!originalData.parsed_campaign) {\n  throw new Error('parsed_campaign not found in Extract Campaign ID node');\n}\n\nreturn {\n  json: originalData\n};"
       },
       "id": "publish-restore-data-008b",
       "name": "Restore Campaign Data",
