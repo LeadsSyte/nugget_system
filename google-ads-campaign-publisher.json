@@ -541,6 +541,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Restore campaign data after Create Negative Keywords HTTP request\n// Get from Extract Campaign ID node (before HTTP requests)\nconst originalData = $('Extract Campaign ID').item.json;\n\nconsole.log('Restoring campaign data after creating negative keywords');\n\nreturn {\n  json: originalData\n};"
+      },
+      "id": "publish-restore-after-negatives-019b",
+      "name": "Restore Data After Negative Keywords",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5100,
+        500
+      ]
+    },
+    {
+      "parameters": {
         "operation": "update",
         "documentId": {
           "__rl": true,
@@ -834,6 +847,17 @@
       ]
     },
     "Create Negative Keywords": {
+      "main": [
+        [
+          {
+            "node": "Restore Data After Negative Keywords",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Data After Negative Keywords": {
       "main": [
         [
           {
