@@ -444,10 +444,10 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get campaign data directly from original nodes (not from aggregated data)\n// This avoids the issue of parsed_campaign being lost during aggregation\n\nconst parseCampaignData = $('Parse Campaign Structure').item.json;\nconst extractCampaignIdData = $('Extract Campaign ID').item.json;\n\nconsole.log('Getting data from original nodes');\nconsole.log('Parse Campaign Structure has parsed_campaign:', !!parseCampaignData.parsed_campaign);\nconsole.log('Extract Campaign ID has campaign_id:', !!extractCampaignIdData.campaign_id);\n\nif (!parseCampaignData.parsed_campaign) {\n  throw new Error('parsed_campaign not found in Parse Campaign Structure node');\n}\n\nif (!extractCampaignIdData.campaign_id) {\n  throw new Error('campaign_id not found in Extract Campaign ID node');\n}\n\nreturn {\n  json: {\n    account_id: parseCampaignData.account_id,\n    account_id_clean: parseCampaignData.account_id_clean,\n    account_name: parseCampaignData.account_name,\n    manager_id: parseCampaignData.manager_id,\n    campaign_id: extractCampaignIdData.campaign_id,\n    parsed_campaign: parseCampaignData.parsed_campaign,\n    row_number: parseCampaignData.row_number\n  }\n};"
+        "jsCode": "// Extract campaign_id from aggregated ad group results for sheet updates\nconst aggregatedData = $json.data[0];\n\n// Get campaign_id from the aggregated data (it was passed through all ad group iterations)\nconst campaign_id = aggregatedData.campaign_id;\nconst account_id = aggregatedData.account_id;\nconst row_number = aggregatedData.row_number;\n\nif (!campaign_id) {\n  throw new Error('campaign_id not found in aggregated data');\n}\n\nconsole.log('Preparing sheet updates for campaign:', campaign_id);\n\nreturn {\n  json: {\n    campaign_id,\n    account_id,\n    row_number\n  }\n};"
       },
       "id": "publish-extract-campaign-data-017",
-      "name": "Extract Campaign Data",
+      "name": "Prepare Sheet Updates",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -457,7 +457,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Create campaign-level negative keywords\nconst data = $json;\n\n// Debug logging\nconsole.log('Data keys:', Object.keys(data));\nconsole.log('parsed_campaign exists:', !!data.parsed_campaign);\n\nif (!data.parsed_campaign) {\n  console.error('ERROR: parsed_campaign is undefined!');\n  console.log('Full data:', JSON.stringify(data, null, 2));\n  throw new Error('parsed_campaign is undefined - check Extract Campaign Data node');\n}\n\nconst negatives = data.parsed_campaign.negative_keywords || [];\n\nconst operations = negatives.map(neg => ({\n  create: {\n    campaign: `customers/${data.account_id_clean}/campaigns/${data.campaign_id}`,\n    keyword: {\n      text: neg.text,\n      matchType: neg.match_type\n    },\n    negative: true\n  }\n}));\n\nconsole.log(`Creating ${operations.length} campaign-level negative keywords`);\n\nreturn {\n  json: {\n    ...data,\n    negative_operations: { operations },\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${data.account_id_clean}/campaignCriteria:mutate`\n  }\n};"
+        "jsCode": "// Create campaign-level negative keywords (runs BEFORE ad group loop)\nconst data = $json;\nconst negatives = data.parsed_campaign.negative_keywords || [];\n\nconst operations = negatives.map(neg => ({\n  create: {\n    campaign: `customers/${data.account_id_clean}/campaigns/${data.campaign_id}`,\n    keyword: {\n      text: neg.text,\n      matchType: neg.match_type\n    },\n    negative: true\n  }\n}));\n\nconsole.log(`Creating ${operations.length} campaign-level negative keywords`);\n\nreturn {\n  json: {\n    ...data,\n    negative_operations: { operations },\n    api_endpoint: `https://googleads.googleapis.com/v22/customers/${data.account_id_clean}/campaignCriteria:mutate`\n  }\n};"
       },
       "id": "publish-prepare-negatives-018",
       "name": "Prepare Negative Keywords",
@@ -674,7 +674,7 @@
       "main": [
         [
           {
-            "node": "Split into Ad Groups",
+            "node": "Prepare Negative Keywords",
             "type": "main",
             "index": 0
           }
@@ -767,18 +767,18 @@
       "main": [
         [
           {
-            "node": "Extract Campaign Data",
+            "node": "Prepare Sheet Updates",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract Campaign Data": {
+    "Prepare Sheet Updates": {
       "main": [
         [
           {
-            "node": "Prepare Negative Keywords",
+            "node": "Update Campaign Drafts Sheet",
             "type": "main",
             "index": 0
           }
@@ -800,7 +800,7 @@
       "main": [
         [
           {
-            "node": "Update Campaign Drafts Sheet",
+            "node": "Split into Ad Groups",
             "type": "main",
             "index": 0
           }
