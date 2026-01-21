@@ -243,6 +243,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Restore campaign data after location targeting HTTP request\n// HTTP requests replace input data with response, so we need to retrieve original data\nconst originalData = $('Prepare Location Targeting').item.json;\n\nconsole.log('Restoring campaign data after location targeting');\nconsole.log('Has parsed_campaign:', !!originalData.parsed_campaign);\n\nif (!originalData.parsed_campaign) {\n  throw new Error('parsed_campaign not found in Prepare Location Targeting node');\n}\n\nreturn {\n  json: originalData\n};"
+      },
+      "id": "publish-restore-data-008b",
+      "name": "Restore Campaign Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2900,
+        500
+      ]
+    },
+    {
+      "parameters": {
         "jsCode": "// Create ad groups for each ad group in the structure\nconst previousData = $('Extract Campaign ID').item.json;\nconst adGroups = previousData.parsed_campaign.ad_groups || [];\n\nconsole.log(`Creating ${adGroups.length} ad groups`);\n\n// Return one item per ad group\nreturn adGroups.map((adGroup, index) => ({\n  json: {\n    ...previousData,\n    current_ad_group: adGroup,\n    ad_group_index: index\n  }\n}));"
       },
       "id": "publish-split-ad-groups-009",
@@ -671,6 +684,17 @@
       ]
     },
     "Set Location Targeting": {
+      "main": [
+        [
+          {
+            "node": "Restore Campaign Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Campaign Data": {
       "main": [
         [
           {
