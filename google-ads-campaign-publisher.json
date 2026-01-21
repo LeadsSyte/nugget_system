@@ -243,19 +243,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Restore campaign data after location targeting HTTP request\n// HTTP requests replace input data with response, so we need to retrieve original data\n// Get from Extract Campaign ID node (before any HTTP requests)\nconst originalData = $('Extract Campaign ID').item.json;\n\nconsole.log('Restoring campaign data after location targeting');\nconsole.log('Has parsed_campaign:', !!originalData.parsed_campaign);\n\nif (!originalData.parsed_campaign) {\n  throw new Error('parsed_campaign not found in Extract Campaign ID node');\n}\n\nreturn {\n  json: originalData\n};"
-      },
-      "id": "publish-restore-data-008b",
-      "name": "Restore Campaign Data",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2900,
-        500
-      ]
-    },
-    {
-      "parameters": {
         "jsCode": "// Create ad groups for each ad group in the structure\nconst previousData = $('Extract Campaign ID').item.json;\nconst adGroups = previousData.parsed_campaign.ad_groups || [];\n\nconsole.log(`Creating ${adGroups.length} ad groups`);\n\n// Return one item per ad group\nreturn adGroups.map((adGroup, index) => ({\n  json: {\n    ...previousData,\n    current_ad_group: adGroup,\n    ad_group_index: index\n  }\n}));"
       },
       "id": "publish-split-ad-groups-009",
@@ -440,19 +427,6 @@
           "name": "Google Ads account"
         }
       }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Restore campaign data before aggregation\n// HTTP requests lose data, so get it from Split into Ad Groups node\nconst originalData = $('Split into Ad Groups').item.json;\n\nconsole.log('Restoring campaign data before aggregation');\nconsole.log('campaign_id:', originalData.campaign_id);\n\nreturn {\n  json: {\n    campaign_id: originalData.campaign_id,\n    account_id: originalData.account_id,\n    account_id_clean: originalData.account_id_clean,\n    account_name: originalData.account_name,\n    manager_id: originalData.manager_id,\n    row_number: originalData.row_number\n  }\n};"
-      },
-      "id": "publish-restore-for-aggregate-015b",
-      "name": "Restore Data for Aggregation",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        4300,
-        500
-      ]
     },
     {
       "parameters": {
