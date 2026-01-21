@@ -470,7 +470,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get data from aggregated results (campaign_id was passed through the entire ad group loop)\nconst aggregatedData = $json.data[0];\n\nconsole.log('Aggregated data keys:', Object.keys(aggregatedData));\nconsole.log('campaign_id:', aggregatedData.campaign_id);\nconsole.log('account_id:', aggregatedData.account_id);\n\nconst campaign_id = aggregatedData.campaign_id;\nconst account_id = aggregatedData.account_id;\nconst row_number = aggregatedData.row_number;\n\nif (!campaign_id) {\n  console.error('Available keys in aggregated data:', Object.keys(aggregatedData));\n  throw new Error('campaign_id not found in aggregated data');\n}\n\nconsole.log('Preparing sheet updates for campaign:', campaign_id);\n\nreturn {\n  json: {\n    campaign_id,\n    account_id,\n    row_number\n  }\n};"
+        "jsCode": "// Get data from Extract Campaign ID node (outside the ad group loop)\n// This avoids n8n paired item issues with aggregation\nconst campaignData = $('Extract Campaign ID').first().json;\n\nconsole.log('Getting sheet update data from Extract Campaign ID node');\n\nconst campaign_id = campaignData.campaign_id;\nconst account_id = campaignData.account_id;\nconst row_number = campaignData.row_number;\n\nif (!campaign_id) {\n  throw new Error('campaign_id not found in Extract Campaign ID node');\n}\n\nconsole.log('Preparing sheet updates for campaign:', campaign_id);\n\nreturn {\n  json: {\n    campaign_id,\n    account_id,\n    row_number\n  }\n};"
       },
       "id": "publish-extract-campaign-data-017",
       "name": "Prepare Sheet Updates",
@@ -773,7 +773,7 @@
       "main": [
         [
           {
-            "node": "Restore Data for Aggregation",
+            "node": "Aggregate Ad Group Results",
             "type": "main",
             "index": 0
           }
@@ -792,17 +792,6 @@
       ]
     },
     "Create Ads": {
-      "main": [
-        [
-          {
-            "node": "Restore Data for Aggregation",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Restore Data for Aggregation": {
       "main": [
         [
           {
