@@ -443,6 +443,19 @@
     },
     {
       "parameters": {
+        "jsCode": "// Restore campaign data before aggregation\n// HTTP requests lose data, so get it from Split into Ad Groups node\nconst originalData = $('Split into Ad Groups').item.json;\n\nconsole.log('Restoring campaign data before aggregation');\nconsole.log('campaign_id:', originalData.campaign_id);\n\nreturn {\n  json: {\n    campaign_id: originalData.campaign_id,\n    account_id: originalData.account_id,\n    account_id_clean: originalData.account_id_clean,\n    account_name: originalData.account_name,\n    manager_id: originalData.manager_id,\n    row_number: originalData.row_number\n  }\n};"
+      },
+      "id": "publish-restore-for-aggregate-015b",
+      "name": "Restore Data for Aggregation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4300,
+        500
+      ]
+    },
+    {
+      "parameters": {
         "aggregate": "aggregateAllItemData",
         "options": {}
       },
@@ -758,7 +771,7 @@
       "main": [
         [
           {
-            "node": "Aggregate Ad Group Results",
+            "node": "Restore Data for Aggregation",
             "type": "main",
             "index": 0
           }
@@ -777,6 +790,17 @@
       ]
     },
     "Create Ads": {
+      "main": [
+        [
+          {
+            "node": "Restore Data for Aggregation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Data for Aggregation": {
       "main": [
         [
           {
