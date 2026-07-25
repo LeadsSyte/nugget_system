@@ -40,6 +40,7 @@ function vetLeads() {
         body:    (msg.getPlainBody() || msg.getBody() || '').slice(0, 6000),
         date:    msg.getDate(),
         permalink: thread.getPermalink(),
+        messageId: msg.getId(), // lets the dashboard re-forward a held lead
       };
 
       const verdict = vetWithClaude_(lead);
@@ -167,13 +168,17 @@ function normaliseVerdict_(raw) {
 
 /**
  * Forward a clean lead to the client, prepending the AI verdict.
+ * `manual` = true when a human released it from the dashboard despite the score.
  */
-function forwardLead_(msg, verdict) {
+function forwardLead_(msg, verdict, manual) {
+  const header = manual
+    ? '🔓 MANUALLY RELEASED  ·  AI score ' + verdict.score + '/100'
+    : '✅ AI-VETTED LEAD  ·  Score ' + verdict.score + '/100';
   const banner =
     '────────────────────────────────────────\n' +
-    '✅ AI-VETTED LEAD  ·  Score ' + verdict.score + '/100\n' +
+    header + '\n' +
     (verdict.summary ? 'What they want: ' + verdict.summary + '\n' : '') +
-    (verdict.reason ? 'Why it passed: ' + verdict.reason + '\n' : '') +
+    (verdict.reason ? (manual ? 'AI note: ' : 'Why it passed: ') + verdict.reason + '\n' : '') +
     '────────────────────────────────────────\n\n' +
     '(Original submission below)\n\n';
 
@@ -205,6 +210,7 @@ function logLead_(lead, verdict, isClean) {
     verdict.summary,
     verdict.reason,
     lead.permalink,
+    lead.messageId || '',
   ]);
 }
 
@@ -233,6 +239,7 @@ function getLogSheet_() {
     sheet.appendRow([
       'Logged At', 'Client', 'From', 'Subject', 'Score', 'AI Decision',
       'Action', 'Name', 'Email', 'Phone', 'Summary', 'Reason', 'Gmail Link',
+      'Gmail Message ID',
     ]);
     sheet.setFrozenRows(1);
     sheet.getRange('1:1').setFontWeight('bold');

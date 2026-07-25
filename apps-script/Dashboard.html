@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root {
+      --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --border: #2a2f3a;
+      --text: #e7eaf0; --muted: #9aa3b2; --accent: #5b8cff; --accent-2: #7c5cff;
+      --good: #2ecc71; --good-bg: rgba(46,204,113,.12);
+      --hold: #f0a020; --hold-bg: rgba(240,160,32,.12);
+      --junk: #ff5c6c; --junk-bg: rgba(255,92,108,.12);
+      --shadow: 0 6px 24px rgba(0,0,0,.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 60px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: .2px; }
+    h1 span { color: var(--accent); }
+    .sub { color: var(--muted); font-size: 13px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .card { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+    .card .n { font-size: 26px; font-weight: 700; }
+    .card .l { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+    .card.good .n { color: var(--good); }
+    .card.hold .n { color: var(--hold); }
+
+    .toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .tabs { display: flex; gap: 6px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 4px; }
+    .tab { border: 0; background: transparent; color: var(--muted); padding: 7px 14px; border-radius: 9px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .tab.active { background: var(--accent); color: #fff; }
+    .search { margin-left: auto; }
+    .search input { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 9px 12px; width: 240px; outline: none; }
+    .search input:focus { border-color: var(--accent); }
+
+    .list { display: flex; flex-direction: column; gap: 10px; }
+    .lead { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; }
+    .score { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 16px; border: 2px solid; }
+    .score.good { color: var(--good); border-color: var(--good); background: var(--good-bg); }
+    .score.hold { color: var(--hold); border-color: var(--hold); background: var(--hold-bg); }
+    .score.junk { color: var(--junk); border-color: var(--junk); background: var(--junk-bg); }
+    .mid .subject { font-weight: 650; }
+    .mid .who { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+    .mid .summary { margin-top: 6px; font-size: 13px; }
+    .mid .reason { margin-top: 4px; font-size: 12.5px; color: var(--muted); font-style: italic; }
+    .contact { margin-top: 6px; font-size: 12.5px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+    .contact b { color: var(--text); font-weight: 600; }
+    .right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; text-align: right; }
+    .badge { font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
+    .badge.fwd { color: var(--good); background: var(--good-bg); }
+    .badge.held { color: var(--hold); background: var(--hold-bg); }
+    .when { color: var(--muted); font-size: 11.5px; }
+    .actions { display: flex; gap: 8px; }
+    a.link, button.btn { font-size: 12px; font-weight: 600; border-radius: 9px; padding: 7px 11px; cursor: pointer; text-decoration: none; border: 1px solid var(--border); }
+    a.link { color: var(--muted); background: var(--panel-2); }
+    a.link:hover { color: var(--text); }
+    button.btn { color: #fff; background: var(--accent); border-color: transparent; }
+    button.btn:hover { filter: brightness(1.08); }
+    button.btn[disabled] { opacity: .5; cursor: default; }
+
+    .empty, .loading { text-align: center; color: var(--muted); padding: 50px 0; }
+    .spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--border); color: var(--text); padding: 12px 18px; border-radius: 12px; box-shadow: var(--shadow); opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .lead { grid-template-columns: 48px 1fr; }
+      .right { grid-column: 1 / -1; align-items: flex-start; text-align: left; flex-direction: row; justify-content: space-between; width: 100%; flex-wrap: wrap; }
+      .search input { width: 100%; }
+      .search { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>AI Lead Vetter <span id="client"></span></h1>
+        <div class="sub" id="subtitle">Loading vetted leads…</div>
+      </div>
+    </header>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-f="all">All</button>
+        <button class="tab" data-f="forwarded">Forwarded</button>
+        <button class="tab" data-f="held">Held</button>
+      </div>
+      <div class="search"><input id="q" type="search" placeholder="Search name, email, subject…"></div>
+    </div>
+
+    <div id="content">
+      <div class="loading"><div class="spinner"></div>Loading…</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var DATA = { leads: [], stats: {}, threshold: 55 };
+    var filter = 'all';
+    var query = '';
+
+    function esc(s) { return String(s || '').replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    function fmtDate(iso) {
+      if (!iso) return '';
+      var d = new Date(iso);
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function scoreClass(l) {
+      if (/FORWARDED/i.test(l.action)) return 'good';
+      if (l.score >= DATA.threshold) return 'good';
+      if (l.decision === 'GENUINE') return 'hold';
+      return 'junk';
+    }
+
+    function renderStats() {
+      var s = DATA.stats;
+      document.getElementById('stats').innerHTML =
+        card(s.total, 'Total leads', '') +
+        card(s.forwarded, 'Forwarded', 'good') +
+        card(s.held, 'Held', 'hold') +
+        card(s.forwardRate + '%', 'Forward rate', '');
+    }
+    function card(n, l, cls) {
+      return '<div class="card ' + cls + '"><div class="n">' + n + '</div><div class="l">' + l + '</div></div>';
+    }
+
+    function visibleLeads() {
+      return DATA.leads.filter(function (l) {
+        var fwd = /FORWARDED/i.test(l.action);
+        if (filter === 'forwarded' && !fwd) return false;
+        if (filter === 'held' && fwd) return false;
+        if (query) {
+          var hay = (l.name + ' ' + l.email + ' ' + l.subject + ' ' + l.from + ' ' + l.summary).toLowerCase();
+          if (hay.indexOf(query) === -1) return false;
+        }
+        return true;
+      });
+    }
+
+    function render() {
+      var leads = visibleLeads();
+      var el = document.getElementById('content');
+      if (!leads.length) {
+        el.innerHTML = '<div class="empty">No leads match this view.</div>';
+        return;
+      }
+      el.innerHTML = '<div class="list">' + leads.map(row).join('') + '</div>';
+    }
+
+    function row(l) {
+      var fwd = /FORWARDED/i.test(l.action);
+      var contacts = [];
+      if (l.name)  contacts.push('<span><b>' + esc(l.name) + '</b></span>');
+      if (l.email) contacts.push('<span>' + esc(l.email) + '</span>');
+      if (l.phone) contacts.push('<span>' + esc(l.phone) + '</span>');
+
+      var actions = '';
+      if (l.link) actions += '<a class="link" href="' + esc(l.link) + '" target="_blank">Open in Gmail</a>';
+      if (!fwd && l.messageId) {
+        actions += '<button class="btn" onclick="release(this,\'' + esc(l.messageId) + '\')">Forward to client</button>';
+      }
+
+      return '' +
+        '<div class="lead">' +
+          '<div class="score ' + scoreClass(l) + '">' + l.score + '</div>' +
+          '<div class="mid">' +
+            '<div class="subject">' + esc(l.subject || '(no subject)') + '</div>' +
+            '<div class="who">' + esc(l.from) + '</div>' +
+            (l.summary ? '<div class="summary">' + esc(l.summary) + '</div>' : '') +
+            (l.reason ? '<div class="reason">' + esc(l.reason) + '</div>' : '') +
+            (contacts.length ? '<div class="contact">' + contacts.join('') + '</div>' : '') +
+          '</div>' +
+          '<div class="right">' +
+            '<span class="badge ' + (fwd ? 'fwd' : 'held') + '">' + (fwd ? 'Forwarded' : 'Held') + '</span>' +
+            '<span class="when">' + fmtDate(l.loggedAt) + '</span>' +
+            '<div class="actions">' + actions + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    function release(btn, messageId) {
+      btn.disabled = true; btn.textContent = 'Forwarding…';
+      google.script.run
+        .withSuccessHandler(function () {
+          toast('Lead forwarded to the client ✓');
+          load();
+        })
+        .withFailureHandler(function (err) {
+          btn.disabled = false; btn.textContent = 'Forward to client';
+          toast('Error: ' + (err && err.message ? err.message : err));
+        })
+        .releaseLead(messageId);
+    }
+
+    var toastTimer;
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3000);
+    }
+
+    function load() {
+      google.script.run.withSuccessHandler(function (data) {
+        DATA = data;
+        document.getElementById('client').textContent = '· ' + esc(data.client);
+        document.getElementById('subtitle').textContent =
+          'Forwarding leads scoring ≥ ' + data.threshold + '. Newest first.';
+        renderStats();
+        render();
+      }).withFailureHandler(function (err) {
+        document.getElementById('content').innerHTML =
+          '<div class="empty">Could not load leads.<br>' + esc(err && err.message ? err.message : err) + '</div>';
+      }).getDashboardData();
+    }
+
+    document.getElementById('tabs').addEventListener('click', function (e) {
+      if (e.target.classList.contains('tab')) {
+        [].forEach.call(this.children, function (b) { b.classList.remove('active'); });
+        e.target.classList.add('active');
+        filter = e.target.getAttribute('data-f');
+        render();
+      }
+    });
+    document.getElementById('q').addEventListener('input', function () {
+      query = this.value.trim().toLowerCase(); render();
+    });
+
+    load();
+  </script>
+</body>
+</html>

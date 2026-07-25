@@ -21,7 +21,8 @@ work.
 | `Config.gs` | Everything you tune per client (search query, forward address, threshold, model). |
 | `Code.gs`   | The vetting logic. Entry point: `vetLeads()`. |
 | `Setup.gs`  | One-time helpers: store API key, install the trigger, dry-run test. |
-| `appsscript.json` | Manifest + OAuth scopes. |
+| `Dashboard.gs` + `Dashboard.html` | The web-app front end (lead table, stats, manual-forward override). |
+| `appsscript.json` | Manifest + OAuth scopes + web-app config. |
 
 ---
 
@@ -68,6 +69,34 @@ WordPress form ──▶ leads@syte.co.za ──▶ [AI Vetter] ──▶ client
    Run `setUpTrigger()` once. `vetLeads()` now runs **every 5 minutes**.
    On first real run a log sheet is auto-created if `LOG_SHEET_ID` is blank —
    grab the printed ID from the log and paste it into `Config.gs`.
+
+6. **Deploy the dashboard** (the front end)
+   **Deploy → New deployment → Web app**.
+   - *Execute as:* **Me** (`leads@syte.co.za`) — so it can read the sheet and
+     forward on your behalf.
+   - *Who has access:* your **Workspace domain** (or specific people).
+
+   Open the deployment URL — that's the dashboard. Bookmark/share it with the
+   client. Re-deploy (**Manage deployments → edit → new version**) whenever you
+   change the code.
+
+---
+
+## The dashboard
+
+A single page served from this same project (no Lovable, no extra hosting):
+
+- **Stat cards** — total leads, forwarded, held, forward-rate.
+- **Filterable list** — All / Forwarded / Held, plus free-text search over
+  name, email, subject and sender.
+- **Per-lead detail** — AI score, decision, one-line summary, the reason, and
+  extracted contact fields, with an *Open in Gmail* link.
+- **Manual override** — a **Forward to client** button on any held lead. It
+  re-sends the original email to the client (marked *manually released*),
+  re-labels the thread, and updates the log — for the occasional false negative.
+
+> Because it's an Apps Script web app, only people you grant access to can open
+> it, and it always reflects the live log sheet.
 
 ---
 
