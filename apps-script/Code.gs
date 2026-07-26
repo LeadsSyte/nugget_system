@@ -93,27 +93,39 @@ function vetWithClaude_(lead) {
 
   const system =
     'You are a lead-qualification filter for a marketing agency. You judge ' +
-    'inbound web-form leads for one client and decide whether a human should ' +
-    'see them. GENUINE leads are real people or businesses enquiring about the ' +
-    "client's products/services. JUNK is: spam, bots, SEO/marketing/link-building " +
-    'solicitations, obvious test submissions, gibberish, or pitches selling ' +
-    'something TO the client. Be strict but fair. Reply with ONLY a JSON object, ' +
-    'no prose, no markdown fences.';
+    'inbound WordPress contact-form submissions for one client and decide ' +
+    'whether a human should see them.\n\n' +
+    'CRITICAL: every submission is delivered by the client website\'s own form ' +
+    'mailer, so the email\'s From / sender address is ALWAYS the website address ' +
+    'and is meaningless. It is NOT the lead\'s identity, and it is NEVER a sign ' +
+    'of impersonation or spoofing. Do NOT lower the score because the email ' +
+    'comes from the client\'s own domain. Judge ONLY the enquiry itself and the ' +
+    'contact details the person typed INTO THE FORM (these appear in the body: ' +
+    'name, email, phone, message).\n\n' +
+    'GENUINE = a real person or business making a plausible enquiry about the ' +
+    "client's products/services, with realistic contact details. " +
+    'JUNK = obvious test submissions (placeholder values such as "test", "Tst", ' +
+    '"test@test.com", "123..."), spam, bots, gibberish, or messages trying to ' +
+    'sell something TO the client. Be strict but fair. ' +
+    'Reply with ONLY a JSON object, no prose, no markdown fences.';
 
   const prompt =
     'Client: ' + CONFIG.CLIENT_NAME + '\n\n' +
-    'Evaluate this inbound lead and return JSON with exactly these keys:\n' +
+    'A new contact-form submission arrived. The sender address shown below is ' +
+    'just the website form mailer — IGNORE it. Base your judgement on the ' +
+    'message and the contact details captured in the body. Return JSON with ' +
+    'exactly these keys:\n' +
     '{\n' +
     '  "score": <integer 0-100, how likely this is a genuine sales lead>,\n' +
     '  "decision": "<GENUINE|JUNK>",\n' +
     '  "reason": "<one short sentence explaining the score>",\n' +
-    '  "name": "<lead name or empty>",\n' +
-    '  "email": "<lead email or empty>",\n' +
-    '  "phone": "<lead phone or empty>",\n' +
+    '  "name": "<lead name from the form, or empty>",\n' +
+    '  "email": "<lead email from the form, or empty>",\n' +
+    '  "phone": "<lead phone from the form, or empty>",\n' +
     '  "summary": "<one-line summary of what they want, or empty>"\n' +
     '}\n\n' +
-    '--- LEAD EMAIL ---\n' +
-    'From: ' + lead.from + '\n' +
+    '--- FORM SUBMISSION ---\n' +
+    'Form mailer (ignore this address): ' + lead.from + '\n' +
     'Subject: ' + lead.subject + '\n\n' +
     lead.body;
 

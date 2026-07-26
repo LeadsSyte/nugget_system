@@ -38,6 +38,17 @@ function setUpTrigger() {
 }
 
 /**
+ * Print the URL + id of the log sheet the vetter is using. Handy because the
+ * sheet is auto-created on first run — run this, then open the link from the log
+ * (and optionally paste the id into CONFIG.LOG_SHEET_ID to pin it).
+ */
+function showLogSheet() {
+  const ss = getLogSheet_().getParent();
+  Logger.log('Log sheet URL: %s', ss.getUrl());
+  Logger.log('Log sheet ID:  %s', ss.getId());
+}
+
+/**
  * Dry run: vets the most recent matching lead WITHOUT forwarding or labelling,
  * and prints the AI verdict to the log. Use this to sanity-check your
  * LEAD_SEARCH_QUERY and the model output before going live.

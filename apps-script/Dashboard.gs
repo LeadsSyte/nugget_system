@@ -104,6 +104,23 @@ function releaseLead(messageId) {
   return { ok: true };
 }
 
+/**
+ * Remove a lead row from the log (and dashboard). Called from the dashboard's
+ * Dismiss button. Deletes by stored Gmail message id.
+ *
+ * Note: the message keeps its Gmail labels, but because de-dup is by what's in
+ * the log sheet, a dismissed message WILL be re-vetted on the next run if it
+ * still matches the query. Fix the query (match by sender) so noise never
+ * enters in the first place; use Dismiss for tidying one-off leftovers.
+ */
+function dismissLead(messageId) {
+  if (!messageId) throw new Error('No message id on this row — delete it in the sheet.');
+  const row = findRowByMessageId_(messageId);
+  if (!row) throw new Error('Row not found (already removed?).');
+  getLogSheet_().deleteRow(row.rowIndex);
+  return { ok: true };
+}
+
 /** Find a log row by its stored Gmail message id. Returns {rowIndex, values} or null. */
 function findRowByMessageId_(messageId) {
   const sheet = getLogSheet_();

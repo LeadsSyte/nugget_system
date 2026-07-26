@@ -62,6 +62,8 @@
     button.btn { color: #fff; background: var(--accent); border-color: transparent; }
     button.btn:hover { filter: brightness(1.08); }
     button.btn[disabled] { opacity: .5; cursor: default; }
+    button.btn.danger { background: transparent; color: var(--junk); border-color: var(--junk); }
+    button.btn.danger:hover { background: var(--junk-bg); filter: none; }
 
     .empty, .loading { text-align: center; color: var(--muted); padding: 50px 0; }
     .spinner { width: 26px; height: 26px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 12px; }
@@ -172,6 +174,9 @@
       if (!fwd && l.messageId) {
         actions += '<button class="btn" onclick="release(this,\'' + esc(l.messageId) + '\')">Forward to client</button>';
       }
+      if (l.messageId) {
+        actions += '<button class="btn danger" onclick="dismiss(this,\'' + esc(l.messageId) + '\')">Dismiss</button>';
+      }
 
       return '' +
         '<div class="lead">' +
@@ -203,6 +208,21 @@
           toast('Error: ' + (err && err.message ? err.message : err));
         })
         .releaseLead(messageId);
+    }
+
+    function dismiss(btn, messageId) {
+      if (!confirm('Remove this lead from the dashboard? (The email stays in Gmail.)')) return;
+      btn.disabled = true; btn.textContent = 'Removing…';
+      google.script.run
+        .withSuccessHandler(function () {
+          toast('Removed ✓');
+          load();
+        })
+        .withFailureHandler(function (err) {
+          btn.disabled = false; btn.textContent = 'Dismiss';
+          toast('Error: ' + (err && err.message ? err.message : err));
+        })
+        .dismissLead(messageId);
     }
 
     var toastTimer;
