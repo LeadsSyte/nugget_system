@@ -35,6 +35,8 @@ function vetLeads() {
   const goodLabel      = getOrCreateLabel_(CONFIG.LABEL_GOOD);
   const junkLabel      = getOrCreateLabel_(CONFIG.LABEL_JUNK);
 
+  const me = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
+
   let handled = 0;
   threads.forEach(function (thread) {
     thread.getMessages().forEach(function (msg) {
@@ -42,6 +44,14 @@ function vetLeads() {
 
       const id = msg.getId();
       if (seen[id]) return; // this exact message was already vetted
+
+      // Skip messages the vetter itself sent — a forwarded/BCC'd clean lead
+      // lands back in this mailbox and would otherwise be re-vetted and
+      // re-forwarded in a loop. Guard by both our own sender and the forward
+      // subject prefix.
+      const fromLc = (msg.getFrom() || '').toLowerCase();
+      if (me && fromLc.indexOf(me) !== -1) return;
+      if ((msg.getSubject() || '').indexOf('[Qualified Lead]') === 0) return;
 
       try {
         const lead = {
