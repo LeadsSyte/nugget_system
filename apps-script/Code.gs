@@ -3,12 +3,18 @@
  *  AI Lead Vetter — Main logic
  * ============================================================================
  *  Flow, per incoming lead email:
- *    1. Find un-processed lead threads (Config.LEAD_SEARCH_QUERY).
- *    2. Ask Claude to judge: real sales lead vs spam/bot/solicitation,
- *       with a 0-100 score, a reason, and the extracted contact fields.
- *    3. CLEAN leads (score >= threshold)  -> forward to the client + log.
+ *    1. Find candidate lead threads (Config.LEAD_SEARCH_QUERY).
+ *    2. Walk EVERY message in each thread (WordPress leads often share the
+ *       same subject and collapse into one thread), skipping any message
+ *       already recorded in the log sheet.
+ *    3. Ask Claude to judge each new message: real sales lead vs
+ *       spam/bot/solicitation, with a 0-100 score, reason, and contact fields.
+ *    4. CLEAN leads (score >= threshold)  -> forward to the client + log.
  *       JUNK leads  (score <  threshold)  -> hold (label only) + log.
- *    4. Label the thread Processed so it is never vetted twice.
+ *
+ *  De-duplication is by Gmail MESSAGE id recorded in the log sheet — so a new
+ *  lead landing in an already-seen thread is still vetted, and nothing is ever
+ *  vetted (or forwarded) twice.
  *
  *  Entry point for the time-driven trigger: vetLeads()
  * ============================================================================
@@ -18,52 +24,61 @@
  * Main entry point. Point a time-driven trigger at this (see setUpTrigger()).
  */
 function vetLeads() {
-  const query = CONFIG.LEAD_SEARCH_QUERY + ' -label:"' + CONFIG.LABEL_PROCESSED + '"';
-  const threads = GmailApp.search(query, 0, CONFIG.MAX_PER_RUN);
-
+  const threads = GmailApp.search(CONFIG.LEAD_SEARCH_QUERY, 0, CONFIG.MAX_PER_RUN);
   if (!threads.length) {
-    Logger.log('No new leads to vet.');
+    Logger.log('No threads match the query: %s', CONFIG.LEAD_SEARCH_QUERY);
     return;
   }
-  Logger.log('Found %s lead thread(s) to vet.', threads.length);
 
+  const seen = readLoggedMessageIds_(); // message ids already in the log sheet
   const processedLabel = getOrCreateLabel_(CONFIG.LABEL_PROCESSED);
   const goodLabel      = getOrCreateLabel_(CONFIG.LABEL_GOOD);
   const junkLabel      = getOrCreateLabel_(CONFIG.LABEL_JUNK);
 
+  let handled = 0;
   threads.forEach(function (thread) {
-    try {
-      const msg = thread.getMessages()[0]; // the original lead
-      const lead = {
-        from:    msg.getFrom(),
-        subject: msg.getSubject(),
-        body:    (msg.getPlainBody() || msg.getBody() || '').slice(0, 6000),
-        date:    msg.getDate(),
-        permalink: thread.getPermalink(),
-        messageId: msg.getId(), // lets the dashboard re-forward a held lead
-      };
+    thread.getMessages().forEach(function (msg) {
+      if (handled >= CONFIG.MAX_PER_RUN) return;
 
-      const verdict = vetWithClaude_(lead);
-      const isClean = verdict.score >= CONFIG.MIN_SCORE_TO_FORWARD;
+      const id = msg.getId();
+      if (seen[id]) return; // this exact message was already vetted
 
-      if (isClean) {
-        forwardLead_(msg, verdict);
-        thread.addLabel(goodLabel);
-      } else {
-        thread.addLabel(junkLabel);
+      try {
+        const lead = {
+          from:    msg.getFrom(),
+          subject: msg.getSubject(),
+          body:    (msg.getPlainBody() || msg.getBody() || '').slice(0, 6000),
+          date:    msg.getDate(),
+          permalink: thread.getPermalink(),
+          messageId: id,
+        };
+
+        const verdict = vetWithClaude_(lead);
+        const isClean = verdict.score >= CONFIG.MIN_SCORE_TO_FORWARD;
+
+        if (isClean) {
+          forwardLead_(msg, verdict);
+          thread.addLabel(goodLabel);
+        } else {
+          thread.addLabel(junkLabel);
+        }
+
+        logLead_(lead, verdict, isClean);
+        thread.addLabel(processedLabel);
+        seen[id] = 1;
+        handled++;
+
+        Logger.log('%s | score=%s | %s',
+          isClean ? 'FORWARDED' : 'HELD', verdict.score, lead.subject);
+      } catch (err) {
+        // Never let one bad message stop the batch. It stays out of the log,
+        // so the next run retries it. Surface the error for troubleshooting.
+        Logger.log('ERROR vetting a message: %s', err && err.stack ? err.stack : err);
       }
-
-      logLead_(lead, verdict, isClean);
-      thread.addLabel(processedLabel);
-
-      Logger.log('%s | score=%s | %s',
-        isClean ? 'FORWARDED' : 'HELD', verdict.score, lead.subject);
-    } catch (err) {
-      // Never let one bad email stop the batch. Leave it un-processed so the
-      // next run retries it, and surface the error in the log.
-      Logger.log('ERROR vetting a lead: %s', err && err.stack ? err.stack : err);
-    }
+    });
   });
+
+  Logger.log('Done. Vetted %s new message(s).', handled);
 }
 
 /**
@@ -220,6 +235,24 @@ function logLead_(lead, verdict, isClean) {
 
 function getOrCreateLabel_(name) {
   return GmailApp.getUserLabelByName(name) || GmailApp.createLabel(name);
+}
+
+// 1-based column of "Gmail Message ID" in the log sheet (last column).
+const LOG_COL_MSG_ID = 14;
+
+/**
+ * Read the set of Gmail message ids already recorded in the log sheet.
+ * This is our de-dup source of truth — persistent and unbounded, unlike
+ * thread labels (which hid new same-subject leads).
+ */
+function readLoggedMessageIds_() {
+  const sheet = getLogSheet_();
+  const last = sheet.getLastRow();
+  const map = {};
+  if (last < 2) return map; // header only / empty
+  const vals = sheet.getRange(2, LOG_COL_MSG_ID, last - 1, 1).getValues();
+  vals.forEach(function (r) { if (r[0]) map[String(r[0])] = 1; });
+  return map;
 }
 
 function getLogSheet_() {

@@ -18,18 +18,20 @@ const CONFIG = {
 
   // -------------------------------------------------------------------------
   //  How do we recognise an incoming lead in the mailbox?
-  //  This is a normal Gmail search query. Narrow it to THIS client's leads
-  //  so we never touch anything else in leads@syte.co.za.
+  //  This is a normal Gmail search query. Be SPECIFIC — a bare client name
+  //  like `FS Containers` also matches internal notifications, billing mails,
+  //  etc. Prefer the form's subject line or sender address.
   //
-  //  Examples:
-  //    'subject:("New Lead" OR "Contact Form") newer_than:2d'
-  //    'from:(wordpress@theirdomain.com) newer_than:2d'
-  //    'to:(leads+clientname@syte.co.za) newer_than:2d'
+  //  Good examples:
+  //    'subject:("New Quote") newer_than:14d'          // WordPress form subject
+  //    'from:(wordpress@theirdomain.com) newer_than:14d'
+  //    'to:(leads+clientname@syte.co.za) newer_than:14d'
   //
-  //  The script automatically appends `-label:<PROCESSED_LABEL>` so a lead is
-  //  never vetted twice. Keep `newer_than:` in as a safety net.
+  //  De-dup is handled by message id in the log sheet, so the SAME query is
+  //  used every run (no label juggling). Keep `newer_than:` to bound the scan.
+  //  Tip: paste your query into the Gmail search box to preview what it matches.
   // -------------------------------------------------------------------------
-  LEAD_SEARCH_QUERY: 'subject:("New Lead") newer_than:2d',
+  LEAD_SEARCH_QUERY: 'subject:("New Quote") newer_than:14d',
 
   // -------------------------------------------------------------------------
   //  Where do CLEAN (qualified) leads get forwarded to?
