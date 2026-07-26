@@ -256,13 +256,18 @@ function readLoggedMessageIds_() {
 }
 
 function getLogSheet_() {
+  const props = PropertiesService.getScriptProperties();
+  // Prefer the explicit config id; otherwise reuse (or create + remember) one.
+  const id = CONFIG.LOG_SHEET_ID || props.getProperty('LOG_SHEET_ID_AUTO');
   let ss;
-  if (CONFIG.LOG_SHEET_ID) {
-    ss = SpreadsheetApp.openById(CONFIG.LOG_SHEET_ID);
+  if (id) {
+    ss = SpreadsheetApp.openById(id);
   } else {
-    // Auto-create once, then tell the operator to paste the ID into Config.
+    // Create ONCE and store the id so every later call (and the dashboard)
+    // uses the same sheet instead of spawning a new empty one each time.
     ss = SpreadsheetApp.create('AI Lead Vetter Log — ' + CONFIG.CLIENT_NAME);
-    Logger.log('Created log sheet. Paste this ID into CONFIG.LOG_SHEET_ID: %s', ss.getId());
+    props.setProperty('LOG_SHEET_ID_AUTO', ss.getId());
+    Logger.log('Created log sheet (id remembered automatically): %s', ss.getUrl());
   }
 
   let sheet = ss.getSheetByName(CONFIG.LOG_SHEET_TAB);
