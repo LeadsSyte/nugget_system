@@ -22,16 +22,20 @@ const CONFIG = {
   //  like `FS Containers` also matches internal notifications, billing mails,
   //  etc. Prefer the form's subject line or sender address.
   //
-  //  Good examples:
-  //    'subject:("New Quote") newer_than:14d'          // WordPress form subject
-  //    'from:(wordpress@theirdomain.com) newer_than:14d'
+  //  Matching by SENDER is the most reliable signal — the WordPress form
+  //  address is constant even when the subject line varies ("New Quote…" vs
+  //  "Contact - FS Containers…"), and internal Syte notifications come from a
+  //  different address so they can never match.
+  //
+  //  Other examples:
+  //    'subject:("New Quote") newer_than:14d'          // if the subject is stable
   //    'to:(leads+clientname@syte.co.za) newer_than:14d'
   //
   //  De-dup is handled by message id in the log sheet, so the SAME query is
   //  used every run (no label juggling). Keep `newer_than:` to bound the scan.
   //  Tip: paste your query into the Gmail search box to preview what it matches.
   // -------------------------------------------------------------------------
-  LEAD_SEARCH_QUERY: 'subject:("New Quote") newer_than:14d',
+  LEAD_SEARCH_QUERY: 'from:(containers@syteweb.co.za) newer_than:14d',
 
   // -------------------------------------------------------------------------
   //  Where do CLEAN (qualified) leads get forwarded to?
