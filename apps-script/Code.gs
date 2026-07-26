@@ -20,6 +20,10 @@
  * ============================================================================
  */
 
+// Subject prefix stamped on every forwarded clean lead. Also used to detect
+// (and skip) our own forwards when they land back in the mailbox.
+const FORWARD_PREFIX = '[Qualified Lead] ';
+
 /**
  * Main entry point. Point a time-driven trigger at this (see setUpTrigger()).
  */
@@ -35,8 +39,6 @@ function vetLeads() {
   const goodLabel      = getOrCreateLabel_(CONFIG.LABEL_GOOD);
   const junkLabel      = getOrCreateLabel_(CONFIG.LABEL_JUNK);
 
-  const me = (Session.getEffectiveUser().getEmail() || '').toLowerCase();
-
   let handled = 0;
   threads.forEach(function (thread) {
     thread.getMessages().forEach(function (msg) {
@@ -45,13 +47,11 @@ function vetLeads() {
       const id = msg.getId();
       if (seen[id]) return; // this exact message was already vetted
 
-      // Skip messages the vetter itself sent — a forwarded/BCC'd clean lead
+      // Skip the vetter's own forwarded copies — a forwarded/BCC'd clean lead
       // lands back in this mailbox and would otherwise be re-vetted and
-      // re-forwarded in a loop. Guard by both our own sender and the forward
-      // subject prefix.
-      const fromLc = (msg.getFrom() || '').toLowerCase();
-      if (me && fromLc.indexOf(me) !== -1) return;
-      if ((msg.getSubject() || '').indexOf('[Qualified Lead]') === 0) return;
+      // re-forwarded in a loop. Every forward carries the FORWARD_PREFIX in its
+      // subject, so this reliably catches them without needing extra scopes.
+      if ((msg.getSubject() || '').indexOf(FORWARD_PREFIX) === 0) return;
 
       try {
         const lead = {
@@ -220,7 +220,7 @@ function forwardLead_(msg, verdict, manual) {
     '(Original submission below)\n\n';
 
   const opts = {
-    subject: '[Qualified Lead] ' + msg.getSubject(),
+    subject: FORWARD_PREFIX + msg.getSubject(),
     htmlBody: banner.replace(/\n/g, '<br>') + (msg.getBody() || ''),
   };
   if (CONFIG.FORWARD_BCC) opts.bcc = CONFIG.FORWARD_BCC;
